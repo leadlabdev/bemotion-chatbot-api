@@ -41,6 +41,11 @@ export class WhatsappController {
   // Processamento de mensagens recebidas (POST)
   @Post('webhook')
   async handleIncomingMessage(@Body() body: any) {
+    console.log('Corpo do Webhook:', JSON.stringify(body, null, 2));
+    if (!body.entry) {
+      console.error('Propriedade "entry" não encontrada no webhook');
+      return { status: 'error', message: 'Propriedade "entry" não encontrada' };
+    }
     const messages = body.entry?.[0]?.changes?.[0]?.value?.messages;
     if (!messages || messages.length === 0) return;
 
