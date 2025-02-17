@@ -1,22 +1,17 @@
 import { Injectable } from '@nestjs/common';
-import OpenAI from 'openai';
+import axios from 'axios';
 
 @Injectable()
-export class OpenAiService {
-  private openai: OpenAI;
+export class GptService {
+  private readonly apiUrl = 'https://sua-api-de-gpt.com/gerar'; // URL da API do GPT
 
-  constructor() {
-    this.openai = new OpenAI({
-      apiKey: 'process.env.OPENAI_API_KEY,',
-    });
-  }
-
-  async generateResponse(prompt: string) {
-    const response = await this.openai.chat.completions.create({
-      model: 'gpt-4',
-      messages: [{ role: 'user', content: prompt }],
-    });
-
-    return response.choices[0]?.message?.content || 'Não entendi.';
+  async getResponse(question: string): Promise<string> {
+    try {
+      const response = await axios.post(this.apiUrl, { pergunta: question });
+      return response.data.resposta;
+    } catch (error) {
+      console.error('Erro ao chamar GPT:', error.message);
+      return 'Desculpe, não consegui entender sua pergunta.';
+    }
   }
 }

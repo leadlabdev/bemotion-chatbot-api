@@ -1,0 +1,7 @@
+POST http://localhost:3000/whatsapp/send
+Content-Type: application/json
+
+{
+  "to": "55 11 988256639",
+  "message": "Olá! Testando envio de mensagens pelo WhatsApp."
+}

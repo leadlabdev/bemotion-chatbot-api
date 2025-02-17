@@ -5,12 +5,13 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { WebhooksModule } from './webhooks/webhooks.module';
 import { WhatsappService } from './whatsapp/whatsapp.service';
-import { OpenAiService } from './openai/openai.service';
+import { GptService } from './openai/openai.service';
 import { ClientesModule } from './clientes/clientes.module';
 import { AgendamentosModule } from './agendamentos/agendamentos.module';
 import { HttpModule } from '@nestjs/axios';
 import { InteracaoModule } from './interacao/interacao.module';
 import { InteracaoService } from './interacao/interacao.service';
+import { WhatsappController } from './whatsapp/whatsapp.controller';
 
 @Module({
   imports: [
@@ -33,8 +34,8 @@ import { InteracaoService } from './interacao/interacao.service';
     WebhooksModule,
     HttpModule,
   ],
-  controllers: [AppController],
-  providers: [AppService, OpenAiService, WhatsappService],
+  controllers: [AppController, WhatsappController],
+  providers: [AppService, GptService, WhatsappService],
 })
 export class AppModule {
   constructor() {

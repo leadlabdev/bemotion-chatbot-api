@@ -46,10 +46,12 @@ export class WhatsappService {
 
       return response.data;
     } catch (error) {
-      console.error(
-        'Erro ao enviar mensagem:',
-        error.response?.data || error.message,
-      );
+      console.error('Erro ao enviar mensagem:', {
+        status: error.response?.status,
+        data: error.response?.data,
+        message: error.message,
+      });
+
       throw new Error('Falha ao enviar mensagem pelo WhatsApp');
     }
   }
