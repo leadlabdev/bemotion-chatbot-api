@@ -42,23 +42,59 @@ export class WhatsappController {
   @Post('webhook')
   async handleIncomingMessage(@Body() body: any) {
     console.log('Corpo do Webhook:', JSON.stringify(body, null, 2));
+
+    // Verificando se a propriedade 'entry' existe
     if (!body.entry) {
       console.error('Propriedade "entry" não encontrada no webhook');
       return { status: 'error', message: 'Propriedade "entry" não encontrada' };
     }
-    const messages = body.entry?.[0]?.changes?.[0]?.value?.messages;
-    if (!messages || messages.length === 0) return;
 
-    const userMessage = messages[0].text?.body;
-    const userPhone = messages[0].from;
+    // Verificando se há mensagens na entrada
+    const entry = body.entry[0];
+    if (!entry?.changes || entry.changes.length === 0) {
+      console.error('Nenhuma mudança encontrada no webhook');
+      return { status: 'error', message: 'Nenhuma mudança encontrada' };
+    }
+
+    const messageData = entry.changes[0]?.value?.messages;
+    if (!messageData || messageData.length === 0) {
+      console.error('Nenhuma mensagem encontrada');
+      return { status: 'error', message: 'Nenhuma mensagem encontrada' };
+    }
+
+    const userMessage = messageData[0]?.text?.body;
+    const userPhone = messageData[0]?.from;
+
+    // Verificando se a mensagem e o número de telefone estão presentes
+    if (!userMessage || !userPhone) {
+      console.error('Mensagem ou número de telefone não encontrados');
+      return {
+        status: 'error',
+        message: 'Mensagem ou número de telefone não encontrados',
+      };
+    }
 
     console.log(`Recebido: ${userMessage} | De: ${userPhone}`);
 
     // 🔹 Obtendo resposta do GPT
     const gptResponse = await this.gptService.getResponse(userMessage);
 
+    // Verificando se a resposta do GPT é válida
+    if (!gptResponse) {
+      console.error('Resposta do GPT não encontrada');
+      return { status: 'error', message: 'Resposta do GPT não encontrada' };
+    }
+
     // 🔹 Enviando resposta para o usuário pelo WhatsApp
-    await this.whatsappService.sendMessage(userPhone, gptResponse);
+    try {
+      await this.whatsappService.sendMessage(userPhone, gptResponse);
+    } catch (error) {
+      console.error('Erro ao enviar mensagem para o WhatsApp', error);
+      return {
+        status: 'error',
+        message: 'Erro ao enviar mensagem para o WhatsApp',
+      };
+    }
 
     return { status: 'success' };
   }
