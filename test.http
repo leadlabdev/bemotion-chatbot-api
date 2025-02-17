@@ -1,11 +1,3 @@
-# POST http://localhost:3000/whatsapp/send
-# Content-Type: application/json
-
-# {
-#   "to": "55 11 988256639",
-#   "message": "Olá! Testando envio de mensagens pelo WhatsApp."
-# }
-
 
 # ### Teste de Verificação do Webhook (GET)
 # GET http://localhost:3000/whatsapp/webhook?hub.mode=subscribe&hub.challenge=12345&hub.verify_token=EAASKf7Oqj9YBOZCIO2voUNnAO2Mlhcp2IACZBOTw8XeCZAXZCcNulZCZCsDDn1t88XEj0zYkFSd3pZCJzuX71tQsu07XtlDZCw5jZB8sykZC5S11IVsTUqnxBkZBoNVg83P92PU3NIxLeZCvQlbj523Yd43n9ebDcZCA6JJxFlmyLm6hLrgqqjTTpLAJcRryZC8uOUhXt5ijKA2aTE6guUKddD8eNtU7BZAArAPqiYvpDMZD
@@ -13,28 +5,15 @@
 # Content-Type: application/json
 
 
+# GET https://91bb-2804-7f0-b781-284f-1d5c-d5ca-256d-1710.ngrok-free.app/whatsapp/webhook
+# Content-Type: application/json
 
-POST https://bemotion-chatbot-api.vercel.app/whatsapp/webhook
 
+POST https://91bb-2804-7f0-b781-284f-1d5c-d5ca-256d-1710.ngrok-free.app/whatsapp/send
 Content-Type: application/json
 
 {
-  "entry": [
-    {
-      "changes": [
-        {
-          "value": {
-            "messages": [
-              {
-                "from": "5511988256639",
-                "text": {
-                  "body": "Olá"
-                }
-              }
-            ]
-          }
-        }
-      ]
-    }
-  ]
+  "to": "5511988256639",
+  "message": "Olá! Testando envio de mensagens pelo WhatsApp."
 }
+

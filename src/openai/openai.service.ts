@@ -3,15 +3,28 @@ import axios from 'axios';
 
 @Injectable()
 export class GptService {
-  private readonly apiUrl = 'https://sua-api-de-gpt.com/gerar'; // URL da API do GPT
+  private readonly apiUrl = 'https://api.openai.com/v1/completions';
+  private readonly apiKey = process.env.GPT_API_KEY;
 
-  async getResponse(question: string): Promise<string> {
+  async getResponse(message: string): Promise<string> {
     try {
-      const response = await axios.post(this.apiUrl, { pergunta: question });
-      return response.data.resposta;
+      const response = await axios.post(
+        this.apiUrl,
+        {
+          model: 'text-davinci-003',
+          prompt: message,
+          max_tokens: 150,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${this.apiKey}`,
+          },
+        },
+      );
+      return response.data.choices[0].text.trim();
     } catch (error) {
-      console.error('Erro ao chamar GPT:', error.message);
-      return 'Desculpe, não consegui entender sua pergunta.';
+      console.error('Erro ao obter resposta do GPT:', error);
+      return 'Desculpe, houve um erro ao processar sua mensagem.';
     }
   }
 }

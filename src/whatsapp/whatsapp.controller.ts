@@ -44,9 +44,13 @@ export class WhatsappController {
     console.log('Corpo do Webhook:', JSON.stringify(body, null, 2));
 
     // Verificando se a propriedade 'entry' existe
-    if (!body.entry) {
-      console.error('Propriedade "entry" não encontrada no webhook');
-      return { status: 'error', message: 'Propriedade "entry" não encontrada' };
+    // Verificar se o corpo contém a propriedade 'entry'
+    if (!body || !body.entry) {
+      console.log('Corpo do Webhook ou propriedade "entry" ausente');
+      return {
+        status: 'error',
+        message: 'Corpo do Webhook ou "entry" ausente',
+      };
     }
 
     // Verificando se há mensagens na entrada
