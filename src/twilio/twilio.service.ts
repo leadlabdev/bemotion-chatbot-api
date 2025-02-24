@@ -14,10 +14,15 @@ export class TwilioService {
   }
 
   async sendMessage(to: string, body: string) {
-    return this.client.messages.create({
-      from: this.configService.get<string>('TWILIO_WHATSAPP_NUMBER'),
-      to,
-      body,
-    });
+    try {
+      return await this.client.messages.create({
+        from: this.configService.get<string>('TWILIO_WHATSAPP_NUMBER'),
+        to,
+        body,
+      });
+    } catch (error) {
+      console.error('Erro ao enviar mensagem:', error);
+      throw error; // Re-throw the error after logging it
+    }
   }
 }
