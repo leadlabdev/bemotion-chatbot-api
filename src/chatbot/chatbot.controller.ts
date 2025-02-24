@@ -11,18 +11,27 @@ export class ChatbotController {
 
   @Post('webhook')
   async handleIncomingMessage(@Body() body) {
-    const { From, Body: userMessage } = body; // Pegando remetente e mensagem do usuário
+    const { From, Body: userMessage } = body;
 
     try {
+      // Log para debug
+      console.log('Mensagem recebida de:', From);
+      console.log('Conteúdo da mensagem:', userMessage);
+
       // Gerar resposta com OpenAI
       const reply = await this.openAiService.getResponse(userMessage);
 
       // Enviar resposta de volta via WhatsApp
-      await this.twilioService.sendMessage(From, reply);
+      const result = await this.twilioService.sendMessage(From, reply);
 
-      console.log('Mensagem recebida:', body);
-      console.log('Resposta enviada:', reply); // Log da resposta enviada
-      return { success: true, reply }; // Retornando também a resposta gerada
+      // Log do resultado
+      console.log('Mensagem enviada com sucesso:', result.sid);
+
+      return {
+        success: true,
+        reply,
+        messageSid: result.sid,
+      };
     } catch (error) {
       console.error('Erro ao processar a mensagem:', error);
       return { success: false, message: 'Erro ao processar a mensagem.' };
