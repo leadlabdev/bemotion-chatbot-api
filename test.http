@@ -1,19 +1,5 @@
+POST https://4a24-2804-7f0-b782-1fa2-184f-ab60-f530-2099.ngrok-free.app/chatbot/webhook
+Authorization: Basic Base64Encode(accountSid:authToken)
+Content-Type: application/x-www-form-urlencoded
 
-# ### Teste de Verificação do Webhook (GET)
-# GET http://localhost:3000/whatsapp/webhook?hub.mode=subscribe&hub.challenge=12345&hub.verify_token=EAASKf7Oqj9YBOZCIO2voUNnAO2Mlhcp2IACZBOTw8XeCZAXZCcNulZCZCsDDn1t88XEj0zYkFSd3pZCJzuX71tQsu07XtlDZCw5jZB8sykZC5S11IVsTUqnxBkZBoNVg83P92PU3NIxLeZCvQlbj523Yd43n9ebDcZCA6JJxFlmyLm6hLrgqqjTTpLAJcRryZC8uOUhXt5ijKA2aTE6guUKddD8eNtU7BZAArAPqiYvpDMZD
-
-# Content-Type: application/json
-
-
-# GET https://91bb-2804-7f0-b781-284f-1d5c-d5ca-256d-1710.ngrok-free.app/whatsapp/webhook
-# Content-Type: application/json
-
-
-POST https://91bb-2804-7f0-b781-284f-1d5c-d5ca-256d-1710.ngrok-free.app/whatsapp/send
-Content-Type: application/json
-
-{
-  "to": "5511988256639",
-  "message": "Olá! Testando envio de mensagens pelo WhatsApp."
-}
-
+From=whatsapp:+5511988256639&To=whatsapp:+11968439284&Body=Your appointment is coming up on 12/1 at 3pm

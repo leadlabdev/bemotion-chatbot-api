@@ -12,6 +12,8 @@ import { HttpModule } from '@nestjs/axios';
 import { InteracaoModule } from './interacao/interacao.module';
 import { InteracaoService } from './interacao/interacao.service';
 import { WhatsappController } from './whatsapp/whatsapp.controller';
+import { TwilioService } from './twilio/twilio.service';
+import { ChatbotController } from './chatbot/chatbot.controller';
 
 @Module({
   imports: [
@@ -34,8 +36,8 @@ import { WhatsappController } from './whatsapp/whatsapp.controller';
     WebhooksModule,
     HttpModule,
   ],
-  controllers: [AppController, WhatsappController],
-  providers: [AppService, GptService, WhatsappService],
+  controllers: [AppController, WhatsappController, ChatbotController],
+  providers: [AppService, GptService, WhatsappService, TwilioService],
 })
 export class AppModule {
   constructor() {
