@@ -87,29 +87,73 @@ export class TrinksService {
       throw new Error('Erro ao buscar profissionais com agenda.');
     }
   }
-  async getClientes(nome?: string, incluirDetalhes = true) {
-    try {
-      const url = `https://api.trinks.com/v1/clientes?incluirDetalhes=${incluirDetalhes}${nome ? `&nome=${encodeURIComponent(nome)}` : ''}`;
 
-      const response = await firstValueFrom(
-        this.httpService.get(url, {
-          headers: {
-            'X-Api-Key': this.apiKey,
-            accept: 'application/json',
-            estabelecimentoId: this.estabelecimentoId,
-          },
-        }),
-      );
+  async identificarClientePorTelefone(telefone: string) {
+    // Remover o prefixo "whatsapp:" e o código de país "+55"
+    const telefoneFormatado = telefone
+      .replace('whatsapp:', '')
+      .replace('+55', '')
+      .trim();
+    console.log('Telefone formatado para consulta:', telefoneFormatado);
 
-      console.log('Resposta da API Trinks (Clientes):', response.data);
+    const url = `https://api.trinks.com/v1/clientes?telefone=${telefoneFormatado}&incluirDetalhes=false`;
+    const apiKey = 'kdy1HCm2Is6Oj4EYeNupN2la9k2dYqot7vorGi89';
+    const estabelecimentoId = '54027'; // Substitua pelo seu ID
 
-      return Array.isArray(response.data.data) ? response.data.data : [];
-    } catch (error) {
-      console.error('Erro ao buscar clientes:', error);
-      throw new Error('Erro ao buscar clientes.');
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'X-Api-Key': apiKey,
+        accept: 'application/json',
+        estabelecimentoId: estabelecimentoId,
+      },
+    });
+
+    const data = await response.json();
+    console.log('Resposta da API:', data); // Verifique os dados retornados
+
+    if (data.data && data.data.length > 0) {
+      return data.data; // Retorna o array de clientes
+    } else {
+      return []; // Retorna um array vazio caso nenhum cliente seja encontrado
     }
   }
 
+  async createCliente(
+    nome: string,
+    sexo: string,
+    telefone: { ddd: string; numero: string; tipoId: number },
+  ) {
+    try {
+      const url = 'https://api.trinks.com/v1/clientes';
+
+      const response = await firstValueFrom(
+        this.httpService.post(
+          url,
+          {
+            nome,
+            sexo,
+            telefones: [telefone],
+          },
+          {
+            headers: {
+              'X-Api-Key': this.apiKey,
+              accept: 'application/json',
+              'content-type': 'application/json',
+              estabelecimentoId: this.estabelecimentoId,
+            },
+          },
+        ),
+      );
+
+      console.log('Resposta da API Trinks (Criar Cliente):', response.data);
+
+      return response.data;
+    } catch (error) {
+      console.error('Erro ao criar cliente:', error);
+      throw new Error('Erro ao criar cliente.');
+    }
+  }
   async createAgendamento(
     clienteId: number,
     servicoId: number,
@@ -152,34 +196,6 @@ export class TrinksService {
     } catch (error) {
       console.error('Erro ao criar agendamento:', error);
       throw new Error('Erro ao criar agendamento.');
-    }
-  }
-
-  async createCliente(clienteData: {
-    nome: string;
-    sexo: string;
-    telefones: { ddd: string; numero: string; tipoId: number }[];
-  }) {
-    try {
-      const url = 'https://api.trinks.com/v1/clientes';
-
-      const response = await firstValueFrom(
-        this.httpService.post(url, clienteData, {
-          headers: {
-            'X-Api-Key': this.apiKey,
-            accept: 'application/json',
-            'content-type': 'application/json',
-            estabelecimentoId: this.estabelecimentoId,
-          },
-        }),
-      );
-
-      console.log('Resposta da API Trinks (Criar Cliente):', response.data);
-
-      return response.data;
-    } catch (error) {
-      console.error('Erro ao criar cliente:', error);
-      throw new Error('Erro ao criar cliente.');
     }
   }
 }
