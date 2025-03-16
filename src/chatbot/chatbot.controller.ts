@@ -21,8 +21,14 @@ export class ChatbotController {
       .replace('+55', '')
       .trim();
 
+    // Recuperar a sessão do usuário do mapa em memória
     const session = this.sessions.get(telefoneFormatado) || {};
     console.log('Sessão atual recuperada:', session);
+
+    // Variáveis para controlar o fluxo e mensagem
+    let nextEtapa = session.etapa;
+    let prompt = ''; // Prompt para o GPT
+    let messageContext = {}; // Contexto para personalizar a mensagem
 
     if (!session.etapa) {
       const clientes =
@@ -31,85 +37,71 @@ export class ChatbotController {
         );
 
       if (clientes.length === 0) {
-        this.sessions.set(telefoneFormatado, {
-          etapa: 'solicitar_nome',
-        });
-        await this.twilioService.sendMessage(
-          From,
-          'Olá! Para continuar, informe seu nome.',
-        );
-        return;
+        // Iniciar nova sessão para cadastro
+        nextEtapa = 'solicitar_nome';
+        prompt =
+          'Crie uma mensagem amigável para um novo cliente, pedindo que informe seu nome para iniciar o cadastro no salão de beleza.';
       } else {
         const cliente = clientes[0];
-        await this.twilioService.sendMessage(
-          From,
-          `Olá, ${cliente.nome}! Como posso ajudá-lo com o agendamento hoje?`,
-        );
-        return;
+        nextEtapa = 'menu_principal';
+        prompt = `Crie uma mensagem de boas-vindas para ${cliente.nome}, perguntando como podemos ajudar com o agendamento no salão de beleza hoje.`;
+        messageContext = { nome: cliente.nome };
       }
-    }
-
-    if (session.etapa === 'solicitar_nome') {
+    } else if (session.etapa === 'solicitar_nome') {
+      // Atualizar sessão com o nome informado
       session.nome = userMessage;
-      session.etapa = 'solicitar_sexo';
-
-      this.sessions.set(telefoneFormatado, session);
-      console.log('Sessão atualizada com nome:', session);
-
-      await this.twilioService.sendMessage(
-        From,
-        'Ótimo! Agora informe seu sexo (M ou F).',
-      );
-      return;
-    }
-
-    if (session.etapa === 'solicitar_sexo') {
+      nextEtapa = 'solicitar_sexo';
+      prompt = `O cliente informou que seu nome é ${userMessage}. Crie uma mensagem agradecendo pelo nome e pedindo para informar o sexo (M ou F) para finalizar o cadastro.`;
+      messageContext = { nome: userMessage };
+    } else if (session.etapa === 'solicitar_sexo') {
       if (!['M', 'F'].includes(userMessage.toUpperCase())) {
-        await this.twilioService.sendMessage(
-          From,
-          'Por favor, informe M para masculino ou F para feminino.',
-        );
-        return;
+        prompt = `O cliente ${session.nome} informou "${userMessage}" como sexo, que não é válido. Peça educadamente que informe M para masculino ou F para feminino.`;
+        messageContext = { nome: session.nome, respostaInvalida: userMessage };
+        // Etapa não muda, continua solicitando sexo
+      } else {
+        session.sexo = userMessage.toUpperCase();
+        nextEtapa = 'cadastrar_cliente';
+
+        try {
+          await this.trinksService.createCliente(session.nome, session.sexo, {
+            ddd: telefoneFormatado.substring(0, 2),
+            numero: telefoneFormatado.substring(2),
+            tipoId: 1,
+          });
+
+          // Cadastro realizado com sucesso
+          nextEtapa = 'concluido';
+          prompt = `O cadastro do cliente ${session.nome} foi realizado com sucesso. Crie uma mensagem comemorativa informando o sucesso do cadastro e perguntando como podemos ajudar hoje.`;
+          messageContext = { nome: session.nome, sexo: session.sexo };
+        } catch (error) {
+          console.error('Erro ao criar cliente:', error);
+          prompt =
+            'Ocorreu um erro ao criar o cadastro do cliente. Crie uma mensagem de desculpas e peça que tente novamente mais tarde.';
+          nextEtapa = 'erro';
+        }
       }
-
-      session.sexo = userMessage.toUpperCase();
-      session.etapa = 'cadastrar_cliente';
-
-      this.sessions.set(telefoneFormatado, session);
-      console.log('Sessão atualizada com sexo:', session);
-
-      try {
-        await this.trinksService.createCliente(session.nome, session.sexo, {
-          ddd: telefoneFormatado.substring(0, 2),
-          numero: telefoneFormatado.substring(2),
-          tipoId: 1,
-        });
-
-        this.sessions.set(telefoneFormatado, {
-          etapa: 'concluido',
-          nome: session.nome,
-        });
-        console.log('Cadastro concluído, sessão atualizada');
-
-        await this.twilioService.sendMessage(
-          From,
-          `Cadastro realizado com sucesso, ${session.nome}! Como posso ajudá-lo hoje?`,
-        );
-      } catch (error) {
-        console.error('Erro ao criar cliente:', error);
-        await this.twilioService.sendMessage(
-          From,
-          'Ocorreu um erro ao criar seu cadastro. Tente novamente mais tarde.',
-        );
-      }
-      return;
+    } else if (
+      session.etapa === 'concluido' ||
+      session.etapa === 'menu_principal'
+    ) {
+      // Cliente já cadastrado e enviou uma mensagem
+      prompt = `O cliente ${session.nome} enviou a seguinte mensagem: "${userMessage}". 
+      Este é um chatbot de um salão de beleza. Responda de forma útil sobre agendamentos, serviços ou informações do salão. 
+      Se for uma pergunta fora do contexto de salão de beleza, educadamente direcione a conversa de volta para o tema de agendamentos ou serviços.`;
+      messageContext = { nome: session.nome, mensagem: userMessage };
     }
 
-    if (session.etapa === 'concluido') {
-      await this.twilioService.sendMessage(
-        From,
-        'Você já está cadastrado! Como posso ajudá-lo hoje?',
-      );
-    }
+    // Gerar resposta personalizada com GPT
+    const resposta = await this.openAiService.generateResponse(
+      prompt,
+      messageContext,
+    );
+
+    // Atualizar a sessão com a nova etapa
+    session.etapa = nextEtapa;
+    this.sessions.set(telefoneFormatado, session);
+
+    // Enviar a resposta gerada pelo GPT
+    await this.twilioService.sendMessage(From, resposta);
   }
 }
