@@ -1,9 +1,18 @@
 
-POST https://bemotion-chatbot-api.vercel.app/chatbot/webhook
+# POST https://bemotion-chatbot-api.vercel.app/chatbot/webhook
+# Authorization: Basic Base64Encode(accountSid:authToken)
+# Content-Type: application/x-www-form-urlencoded
+
+# {
+#   "From": "whatsapp:+5511999999999",
+#   "Body": "Oi, chatbot!"
+# }
+
+POST https://9e88-2804-868-d043-757e-896b-b513-588-15e8.ngrok-free.app/chatbot/webhook
 Authorization: Basic Base64Encode(accountSid:authToken)
 Content-Type: application/x-www-form-urlencoded
 
 {
-  "From": "whatsapp:+5511999999999",
+  "From": "whatsapp:+11988256639",
   "Body": "Oi, chatbot!"
 }

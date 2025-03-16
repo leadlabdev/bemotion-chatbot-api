@@ -3,17 +3,16 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { WebhooksModule } from './webhooks/webhooks.module';
-import { WhatsappService } from './whatsapp/whatsapp.service';
+
 import { GptService } from './openai/openai.service';
-import { ClientesModule } from './clientes/clientes.module';
-import { AgendamentosModule } from './agendamentos/agendamentos.module';
+
 import { HttpModule } from '@nestjs/axios';
 import { InteracaoModule } from './interacao/interacao.module';
 import { InteracaoService } from './interacao/interacao.service';
-import { WhatsappController } from './whatsapp/whatsapp.controller';
+
 import { TwilioService } from './twilio/twilio.service';
 import { ChatbotController } from './chatbot/chatbot.controller';
+import { TrinksService } from './trinks/trinks.service';
 
 @Module({
   imports: [
@@ -33,11 +32,11 @@ import { ChatbotController } from './chatbot/chatbot.controller';
       }),
     }),
     InteracaoModule,
-    WebhooksModule,
+
     HttpModule,
   ],
-  controllers: [AppController, WhatsappController, ChatbotController],
-  providers: [AppService, GptService, WhatsappService, TwilioService],
+  controllers: [AppController, ChatbotController],
+  providers: [AppService, GptService, TwilioService, TrinksService],
 })
 export class AppModule {
   constructor() {
