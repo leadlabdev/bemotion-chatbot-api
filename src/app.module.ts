@@ -10,6 +10,7 @@ import { TwilioService } from './twilio/twilio.service';
 import { ChatbotController } from './chatbot/chatbot.controller';
 import { TrinksService } from './trinks/trinks.service';
 import { RedisService } from './redis/redis.service';
+import { AgendamentoService } from './agendamentos/agendamentos.service';
 
 @Module({
   imports: [
@@ -39,6 +40,7 @@ import { RedisService } from './redis/redis.service';
     TwilioService,
     TrinksService,
     RedisService,
+    AgendamentoService,
   ],
 })
 export class AppModule {
