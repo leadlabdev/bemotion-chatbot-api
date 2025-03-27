@@ -1,36 +1,33 @@
 import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { MongooseModule } from '@nestjs/mongoose'; // Usar apenas Mongoose
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { GptService } from './openai/openai.service';
 import { HttpModule } from '@nestjs/axios';
-import { InteracaoModule } from './interacao/interacao.module';
 import { TwilioService } from './twilio/twilio.service';
 import { ChatbotController } from './chatbot/chatbot.controller';
 import { TrinksService } from './trinks/trinks.service';
 import { RedisService } from './redis/redis.service';
 import { AgendamentoService } from './agendamentos/agendamentos.service';
+import {
+  Agendamento,
+  AgendamentoSchema,
+} from './agendamentos/agendamentos.schema';
 
 @Module({
   imports: [
     ConfigModule.forRoot(), // Carregar variáveis de ambiente
-    TypeOrmModule.forRootAsync({
+    MongooseModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: async (configService: ConfigService) => ({
-        type: 'postgres',
-        host: configService.get<string>('DB_HOST'),
-        port: configService.get<number>('DB_PORT'),
-        username: configService.get<string>('DB_USER'),
-        password: configService.get<string>('DB_PASSWORD'),
-        database: configService.get<string>('DB_NAME'),
-        autoLoadEntities: true, // Carrega automaticamente as entidades
-        synchronize: true, // Não use em produção! Apenas para desenvolvimento.
+        uri: configService.get<string>('MONGODB_URI'), // URI do MongoDB
       }),
     }),
-    InteracaoModule,
-
+    MongooseModule.forFeature([
+      { name: Agendamento.name, schema: AgendamentoSchema },
+    ]), // Registrar o schema
     HttpModule,
   ],
   controllers: [AppController, ChatbotController],
@@ -45,11 +42,7 @@ import { AgendamentoService } from './agendamentos/agendamentos.service';
 })
 export class AppModule {
   constructor() {
-    // Console logs para checar as variáveis de ambiente
-    console.log('DB Host:', process.env.DB_HOST); // Exibe o host do banco
-    console.log('DB Port:', process.env.DB_PORT); // Exibe a porta
-    console.log('DB User:', process.env.DB_USER); // Exibe o nome de usuário
-    console.log('DB Password:', process.env.DB_PASSWORD); // Exibe a senha
-    console.log('DB Name:', process.env.DB_NAME); // Exibe o nome do banco
+    // Console log para checar a variável de ambiente do MongoDB
+    console.log('MongoDB URI:', process.env.MONGODB_URI);
   }
 }
