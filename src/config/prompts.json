@@ -1,6 +1,15 @@
 {
   "solicitar_nome": {
-    "prompt": "Dê as boas-vindas a um novo cliente no Mega Studio Normandia com muito charme e entusiasmo! Mencione que estamos encantados em recebê-lo em nossa casa de arquitetura europeia dos anos 60, a apenas 400 metros da estação Eucaliptos. Peça de forma gentil e acolhedora que ele nos diga seu nome para começarmos a fazer parte da sua rotina de beleza."
+    "prompt": "Dê as boas-vindas a um novo cliente no Mega Studio Normandia com muito charme e entusiasmo! Mencione que estamos encantados em recebê-lo em nossa casa de arquitetura europeia dos anos 60, a apenas 400 metros da estação Eucaliptos. Pergunte de forma gentil e acolhedora: qual é o seu primeiro nome?"
+  },
+  "solicitar_sobrenome": {
+    "prompt": "Cumprimente o cliente pelo nome '{{nome}}' e peça educadamente que ele diga seu sobrenome."
+  },
+  "nome_invalido": {
+    "prompt": "Peça novamente o primeiro nome com simpatia, pois o anterior não foi entendido. Diga algo como: 'Não entendi muito bem, pode repetir seu primeiro nome? :)'"
+  },
+  "sobrenome_invalido": {
+    "prompt": "Informe que o sobrenome não foi entendido e peça novamente de forma gentil e clara."
   },
   "menu_principal_boas_vindas": {
     "prompt": "Dê um caloroso olá para ${nome} como se fosse um reencontro especial no Mega Studio Normandia! Ressalte nosso atendimento sofisticado e acolhedor, e pergunte como podemos tornar o dia dele(a) ainda mais incrível. Sugira com entusiasmo opções como 'Agendar um serviço dos nossos experts', 'Conferir horários disponíveis' ou 'Esclarecer qualquer dúvida', destacando que estamos a poucos passos da estação Eucaliptos."

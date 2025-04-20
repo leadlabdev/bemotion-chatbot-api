@@ -41,7 +41,12 @@ export class TwilioService implements OnModuleInit {
   }
 
   private formatWhatsAppNumber(number: string): string {
-    const cleanNumber = number.replace('whatsapp:', '');
+    let cleanNumber = number.replace('whatsapp:', '');
+
+    if (!cleanNumber.startsWith('+')) {
+      cleanNumber = `+55${cleanNumber}`;
+    }
+
     return `whatsapp:${cleanNumber}`;
   }
 

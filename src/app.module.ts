@@ -1,19 +1,10 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { MongooseModule } from '@nestjs/mongoose'; // Usar apenas Mongoose
+import { MongooseModule } from '@nestjs/mongoose';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { GptService } from './openai/openai.service';
 import { HttpModule } from '@nestjs/axios';
-import { TwilioService } from './twilio/twilio.service';
-import { ChatbotController } from './chatbot/chatbot.controller';
-import { TrinksService } from './trinks/trinks.service';
-import { RedisService } from './redis/redis.service';
-import { AgendamentoService } from './agendamentos/agendamentos.service';
-import {
-  Agendamento,
-  AgendamentoSchema,
-} from './agendamentos/agendamentos.schema';
+import { ChatbotModule } from './chatbot/chatbot.module'; // Importar o módulo inteiro
 
 @Module({
   imports: [
@@ -22,23 +13,15 @@ import {
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: async (configService: ConfigService) => ({
-        uri: configService.get<string>('MONGODB_URI'), // URI do MongoDB
+        uri: configService.get('MONGODB_URI'), // URI do MongoDB
       }),
     }),
-    MongooseModule.forFeature([
-      { name: Agendamento.name, schema: AgendamentoSchema },
-    ]), // Registrar o schema
+
     HttpModule,
+    ChatbotModule, // Adicionar o ChatbotModule à lista de imports
   ],
-  controllers: [AppController, ChatbotController],
-  providers: [
-    AppService,
-    GptService,
-    TwilioService,
-    TrinksService,
-    RedisService,
-    AgendamentoService,
-  ],
+  controllers: [AppController], // Remova ChatbotController daqui, pois já está no ChatbotModule
+  providers: [AppService],
 })
 export class AppModule {
   constructor() {
