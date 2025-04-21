@@ -20,6 +20,7 @@ export class GptService {
     userId: string,
   ): Promise<string> {
     try {
+      // Gerenciar thread para o usuário
       let threadId = this.threadCache.get(userId);
       if (!threadId) {
         const thread = await this.openai.beta.threads.create();
@@ -27,26 +28,35 @@ export class GptService {
         this.threadCache.set(userId, threadId);
       }
 
-      const enrichedPrompt = this.enrichPromptWithContext(
-        prompt,
-        messageContext,
-      );
+      // Enviar apenas a mensagem atual ou informação contextual essencial
+      let messageContent = messageContext.mensagem || prompt;
 
+      // Adicionar contexto essencial apenas na primeira mensagem ou quando há mudança de contexto
+      if (messageContext.isFirstMessage || messageContext.contextChanged) {
+        if (messageContext.nome) {
+          messageContent = `Nome do cliente: ${messageContext.nome}\n\n${messageContent}`;
+        }
+      }
+
+      // Enviar mensagem para o thread
       await this.openai.beta.threads.messages.create(threadId, {
         role: 'user',
-        content: enrichedPrompt,
+        content: messageContent,
       });
 
+      // Executar o assistente
       const run = await this.openai.beta.threads.runs.create(threadId, {
         assistant_id: this.assistantId,
       });
 
+      // Aguardar a conclusão da execução
       const completedRun = await this.waitForRunCompletion(threadId, run.id);
 
       if (completedRun.status !== 'completed') {
         return `Erro: O assistente retornou com status ${completedRun.status}`;
       }
 
+      // Obter a resposta mais recente
       const messages = await this.openai.beta.threads.messages.list(threadId);
       const assistantMessages = messages.data
         .filter((msg) => msg.role === 'assistant')
@@ -66,6 +76,7 @@ export class GptService {
 
       return 'A resposta do assistente não contém texto.';
     } catch (error) {
+      console.error('Erro ao gerar resposta:', error);
       return 'Ocorreu um erro ao processar sua solicitação.';
     }
   }
@@ -83,38 +94,5 @@ export class GptService {
     }
 
     return run;
-  }
-
-  private enrichPromptWithContext(prompt: string, context: any): string {
-    let enrichedPrompt = `Instruções: ${prompt}\n\n`;
-
-    if (context) {
-      enrichedPrompt += 'Contexto da conversa:\n';
-      if (context.nome) {
-        enrichedPrompt += `Nome do cliente: ${context.nome}\n`;
-      }
-      if (context.conversationStage) {
-        enrichedPrompt += `Estágio da conversa: ${context.conversationStage}\n`;
-      }
-      if (context.previousMessages && context.previousMessages.length > 0) {
-        enrichedPrompt += `Histórico de mensagens:\n${context.previousMessages.join('\n')}\n`;
-      }
-      if (context.listaFormatada) {
-        enrichedPrompt += `Lista de serviços disponíveis:\n${context.listaFormatada}\n`;
-      }
-      for (const key in context) {
-        if (
-          key !== 'nome' &&
-          key !== 'conversationStage' &&
-          key !== 'previousMessages' &&
-          key !== 'listaFormatada' &&
-          context[key] != null
-        ) {
-          enrichedPrompt += `${key}: ${JSON.stringify(context[key])}\n`;
-        }
-      }
-    }
-
-    return enrichedPrompt;
   }
 }

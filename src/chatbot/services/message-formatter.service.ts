@@ -23,13 +23,41 @@ export class MessageFormatterService {
     context: any = {},
   ): Promise<string> {
     console.log('formatterService - promptKey:', promptKey);
-    const rawPrompt = prompts[promptKey]?.prompt || '';
-    const prompt = interpolatePrompt(rawPrompt, context);
-    console.log('formatterService - prompt', prompt);
-    console.log('formatterService - context', context);
+
+    let effectivePrompt = '';
+    let effectiveContext = { ...context };
+
+    // Tratamento especial para 'menu_principal_livre' e 'menu_principal_boas_vindas'
+    if (promptKey === 'menu_principal_livre') {
+      // Envia apenas a mensagem sem prompt adicional
+      effectiveContext = {
+        mensagem: context.mensagem,
+        nome: context.nome,
+        isFirstMessage: false,
+      };
+    } else if (promptKey === 'menu_principal_boas_vindas') {
+      // Identifica primeiro contato
+      effectiveContext = {
+        mensagem: `Olá, sou um cliente novo.`,
+        nome: context.nome,
+        isFirstMessage: true,
+      };
+    } else {
+      // Para outros casos, usa os prompts configurados
+      effectivePrompt = interpolatePrompt(
+        prompts[promptKey]?.prompt || '',
+        context,
+      );
+      effectiveContext.isFirstMessage = !context.saudacaoEnviada;
+    }
+
+    // Log apenas para depuração
+    console.log('formatterService - context', effectiveContext);
+
+    // Gera e envia a resposta
     const response = await this.openAiService.generateResponse(
-      prompt,
-      context,
+      effectivePrompt,
+      effectiveContext,
       telefone,
     );
 
