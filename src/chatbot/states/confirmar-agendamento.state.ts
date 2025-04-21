@@ -37,7 +37,7 @@ export class ConfirmarAgendamentoState implements ChatbotState {
           session.dataHoraInicio,
           session.duracao,
           session.valor,
-          'Agendamento via WhatsApp',
+          'Agendamento via lead',
         );
 
         session.etapa = 'menu_principal';

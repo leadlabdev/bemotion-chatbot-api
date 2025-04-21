@@ -4,6 +4,12 @@ import { ChatbotState } from './chatbot-state.interface';
 import { ChatbotController } from '../controllers/chatbot.controller';
 import { MessageFormatterService } from '../services/message-formatter.service';
 
+interface ChatbotContext {
+  conversationStage: string;
+  previousMessages: string[];
+  nome?: string; // Optional property
+}
+
 @Injectable()
 export class InitialState implements ChatbotState {
   constructor(
@@ -16,26 +22,41 @@ export class InitialState implements ChatbotState {
     telefone: string,
     userMessage: string,
   ): Promise<void> {
-    const session = controller.getSession(telefone);
-
+    const session = controller.getSession(telefone) || {};
     const clientes =
       await this.trinksService.identificarClientePorTelefone(telefone);
 
+    const context: ChatbotContext = {
+      conversationStage:
+        clientes.length === 0
+          ? 'saudação inicial'
+          : 'pergunta sobre procedimento',
+      previousMessages: [`Cliente: ${userMessage}`],
+    };
+
+    let response: string;
     if (clientes.length === 0) {
       session.etapa = 'solicitar_nome';
-      await this.messageFormatter.formatAndSend(telefone, 'solicitar_nome');
+      response = await this.messageFormatter.formatAndSend(
+        telefone,
+        'solicitar_nome',
+        context,
+      );
     } else {
       const cliente = clientes[0];
       session.clienteId = cliente.id;
       session.nome = cliente.nome;
       session.etapa = 'menu_principal';
-      await this.messageFormatter.formatAndSend(
+      context.nome = cliente.nome; // Now valid
+      response = await this.messageFormatter.formatAndSend(
         telefone,
         'menu_principal_boas_vindas',
-        { nome: cliente.nome },
+        context,
       );
     }
 
+    context.previousMessages.push(`Mari: ${response}`);
+    session.previousMessages = context.previousMessages;
     controller.updateSession(telefone, session);
   }
 }

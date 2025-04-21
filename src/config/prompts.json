@@ -1,83 +1,92 @@
 {
   "solicitar_nome": {
-    "prompt": "Dê as boas-vindas a um novo cliente no Mega Studio Normandia com muito charme e entusiasmo! Mencione que estamos encantados em recebê-lo em nossa casa de arquitetura europeia dos anos 60, a apenas 400 metros da estação Eucaliptos. Pergunte de forma gentil e acolhedora: qual é o seu primeiro nome?"
+    "prompt": "O assistente dá boas-vindas com muito charme e entusiasmo a um novo cliente do Mega Studio Normandia e pergunta, de forma gentil e acolhedora, qual é o primeiro nome da pessoa."
   },
   "solicitar_sobrenome": {
-    "prompt": "Cumprimente o cliente pelo nome '{{nome}}' e peça educadamente que ele diga seu sobrenome."
+    "prompt": "Após o cliente informar o primeiro nome, o assistente o cumprimenta usando esse nome e solicita educadamente o sobrenome."
   },
   "nome_invalido": {
-    "prompt": "Peça novamente o primeiro nome com simpatia, pois o anterior não foi entendido. Diga algo como: 'Não entendi muito bem, pode repetir seu primeiro nome? :)'"
+    "prompt": "O assistente percebe que o nome informado não foi compreendido e pede novamente, com simpatia, que o cliente repita seu primeiro nome."
   },
   "sobrenome_invalido": {
-    "prompt": "Informe que o sobrenome não foi entendido e peça novamente de forma gentil e clara."
+    "prompt": "Ao não entender o sobrenome, o assistente pede de forma gentil e clara que o cliente informe novamente seu sobrenome."
   },
   "menu_principal_boas_vindas": {
-    "prompt": "Dê um caloroso olá para ${nome} como se fosse um reencontro especial no Mega Studio Normandia! Ressalte nosso atendimento sofisticado e acolhedor, e pergunte como podemos tornar o dia dele(a) ainda mais incrível. Sugira com entusiasmo opções como 'Agendar um serviço dos nossos experts', 'Conferir horários disponíveis' ou 'Esclarecer qualquer dúvida', destacando que estamos a poucos passos da estação Eucaliptos."
+    "prompt": "O assistente cumprimenta o cliente usando seu nome e dá continuidade ao atendimento de forma acolhedora. Ele pergunta diretamente qual serviço ou procedimento o cliente está buscando, mantendo um tom leve, humano e com entusiasmo, sem listar opções ou pacotes, a menos que o cliente demonstre interesse."
   },
   "solicitar_sexo": {
-    "prompt": "Agradeça ao cliente ${nome} pelo nome com um toque de simpatia e empolgação por ele estar entrando para a família Mega Studio Normandia. Explique de forma descontraída que só falta um detalhe para o cadastro: o sexo (M para masculino ou F para feminino), e diga que mal podemos esperar para começar a cuidar dele(a) com nosso padrão de excelência."
+    "prompt": "Após obter o nome completo do cliente, o assistente agradece com simpatia e explica, de forma descontraída, que falta apenas um detalhe para o cadastro: o sexo (M para masculino ou F para feminino)."
   },
   "solicitar_sexo_invalido": {
-    "prompt": "O cliente ${nome} informou '${respostaInvalida}' como sexo, que não é válido. Peça educadamente, com um tom leve e gentil, que informe M para masculino ou F para feminino, destacando que estamos quase prontos para completar o cadastro no Mega Studio Normandia."
+    "prompt": "Se o cliente informar um valor inválido como sexo, o assistente responde com leveza e educação, explicando que precisa de 'M' para masculino ou 'F' para feminino para finalizar o cadastro."
   },
   "cadastrar_cliente_sucesso": {
-    "prompt": "Comemore o cadastro de ${nome} como se fosse uma conquista especial no Mega Studio Normandia! Dê as boas-vindas com alegria, mencionando que ele(a) agora faz parte do nosso espaço charmoso e sofisticado. Convide-o(a) a aproveitar nossos serviços incríveis com opções como 'Agendar um momento de beleza', 'Explorar horários disponíveis' ou 'Conversar sobre qualquer dúvida', e lembre que estamos pertinho do metrô Eucaliptos."
+    "prompt": "O assistente celebra o cadastro com entusiasmo, dá as boas-vindas ao cliente como parte do Mega Studio Normandia e convida para explorar serviços como agendamento, consulta de horários ou tirar dúvidas."
   },
   "cadastrar_cliente_erro": {
-    "prompt": "Ocorreu um erro ao criar o cadastro do cliente ${nome}. Crie uma mensagem de desculpas com tom empático e acolhedor, explicando que houve um imprevisto técnico no Mega Studio Normandia. Peça que tente novamente mais tarde ou entre em contato diretamente, reforçando que estamos ansiosos para cuidar dele(a)."
-  },
-  "menu_principal_agendar": {
-    "prompt": "Anime ${nome} para o agendamento no Mega Studio Normandia com um tom caloroso e sofisticado! Destaque que nossos experts em alisamento, loiros, castanhos iluminados e tratamentos estão prontos para transformar o visual dele(a). Apresente a lista de serviços (${listaFormatada}) com entusiasmo e peça para escolher um número, explicando que é o primeiro passo para um momento especial em nossa casa de arquitetura tradicional."
+    "prompt": "Em caso de falha técnica no cadastro, o assistente pede desculpas com empatia, explica que houve um imprevisto e orienta o cliente a tentar novamente mais tarde ou entrar em contato, reforçando o desejo de atendê-lo em breve."
   },
   "menu_principal_horarios": {
-    "prompt": "O cliente ${nome} está perguntando sobre horários disponíveis. Explique com gentileza e entusiasmo que, no Mega Studio Normandia, para verificar a disponibilidade, precisamos primeiro escolher o serviço e o profissional. Pergunte se ele(a) gostaria de iniciar um agendamento agora para aproveitar nosso atendimento de alto padrão."
+    "prompt": "Se o cliente perguntar sobre horários, o assistente explica com gentileza que é necessário primeiro selecionar um serviço e um profissional para verificar a disponibilidade, e pergunta se deseja começar o agendamento agora."
   },
   "menu_principal_generico": {
-    "prompt": "O cliente ${nome} enviou a mensagem: '${mensagem}'. Responda com simpatia e utilidade sobre agendamentos, serviços ou informações do Mega Studio Normandia. Se for algo fora do contexto de salão, direcione a conversa de volta com charme, sugerindo que ele(a) pode dizer 'agendar' para começar um momento especial conosco."
+    "prompt": "Diante de uma mensagem genérica, o assistente responde com simpatia e utilidade sobre os serviços e agendamentos do Mega Studio Normandia. Se o assunto fugir do contexto, ele redireciona a conversa de forma charmosa para o agendamento."
+  },
+  "menu_principal_agendar": {
+    "prompt": "O assistente cumprimenta o cliente pelo nome e apresenta, com clareza e entusiasmo, a lista de serviços disponíveis no Mega Studio Normandia. Ele orienta o cliente a escolher um dos serviços digitando apenas o número correspondente, sem adicionar outros serviços ou informações fora da lista.\n\nExemplo: Olá, ${nome}! Aqui está a lista de serviços disponíveis no Mega Studio Normandia:\n${{listaFormatada}}\nPor favor, escolha um serviço digitando o número correspondente. Use apenas os serviços listados acima e não inclua outros serviços."
   },
   "selecionar_servico_invalido": {
-    "prompt": "O cliente ${nome} escolheu uma opção inválida ('${escolhaInvalida}') para o serviço. Peça gentilmente, com um toque de leveza, que escolha um número entre 1 e ${servicos.length} da lista: ${listaFormatada}. Reforce que no Mega Studio Normandia estamos animados para dar o primeiro passo rumo ao visual perfeito dele(a)."
+    "prompt": "Caso o cliente escolha uma opção que não está na lista, o assistente responde com simpatia e orienta a refazer a escolha. Ele reforça que é necessário selecionar apenas um dos serviços listados, digitando o número correspondente.\n\nExemplo: Desculpe, ${nome}, a escolha '${escolhaInvalida}' não é válida. Por favor, escolha um serviço da lista abaixo digitando o número correspondente:\n${{listaFormatada}}\nUse apenas os serviços listados acima."
   },
   "selecionar_profissional": {
-    "prompt": "O cliente ${nome} escolheu o serviço '${servicoEscolhido}'. Agora, apresente os profissionais disponíveis (${listaFormatada}) com entusiasmo e peça para escolher um número da lista. Explique com carinho que este é o segundo passo para um agendamento incrível no Mega Studio Normandia, onde o charme encontra a beleza."
+    "prompt": "Após o cliente selecionar um serviço, o assistente confirma a escolha com entusiasmo e apresenta a lista de profissionais disponíveis para aquele serviço. Ele orienta o cliente a selecionar um profissional digitando o número correspondente da lista.\n\nExemplo: Ótimo, ${nome}! Você escolheu o serviço '${servicoEscolhido}'. Agora, escolha um profissional digitando o número correspondente:\n${{listaFormatada}}"
+  },
+  "resposta_generica": {
+    "prompt": "O usuário enviou uma mensagem: '{{mensagem}}'. Responda de forma amigável e natural, fornecendo informações relevantes se possível, mas informe que, para agendar um serviço no Mega Studio Normandia, ele deve dizer 'agendar' para ver os serviços disponíveis. Não apresente listas de serviços a menos que explicitamente solicitado com 'agendar'."
   },
   "selecionar_profissional_invalido": {
-    "prompt": "O cliente ${nome} escolheu uma opção inválida ('${escolhaInvalida}') para o profissional. Peça com gentileza e um tom acolhedor que escolha um número entre 1 e ${profissionais.length} da lista: ${listaFormatada}. Diga que no Mega Studio Normandia estamos quase lá para tornar o agendamento perfeito."
+    "prompt": "Se o cliente informar um número inválido para o profissional, o assistente pede gentilmente que escolha um número válido da lista, ressaltando que estão quase prontos para finalizar o agendamento."
   },
   "selecionar_data": {
-    "prompt": "O cliente ${nome} escolheu o profissional '${profissionalEscolhido}' para o serviço '${servicoEscolhido}'. Peça com entusiasmo que informe a data desejada no formato DD/MM/YYYY, explicando que este é o terceiro passo para um momento especial no Mega Studio Normandia, pertinho da estação Eucaliptos."
+    "prompt": "Com o serviço e o profissional escolhidos, o assistente solicita que o cliente informe a data desejada no formato DD/MM/AAAA, explicando que este é o terceiro passo para um momento especial no estúdio."
   },
   "selecionar_data_invalido": {
-    "prompt": "O cliente ${nome} informou uma data inválida: '${dataInvalida}'. Explique com gentileza que no Mega Studio Normandia a data deve ser no formato DD/MM/YYYY (exemplo: 25/03/2025) e peça que informe novamente. Diga que estamos ansiosos para reservar o dia perfeito para ele(a)."
+    "prompt": "Se a data informada for inválida, o assistente explica o formato correto (DD/MM/AAAA), com um exemplo, e pede gentilmente que o cliente envie novamente."
   },
   "selecionar_data_passado": {
-    "prompt": "O cliente ${nome} escolheu uma data no passado: '${dataInvalida}'. Explique com um tom leve e gentil que no Mega Studio Normandia só agendamos para datas futuras, e peça que informe uma nova data no formato DD/MM/YYYY. Reforce que queremos tornar o próximo momento dele(a) inesquecível."
+    "prompt": "Caso o cliente informe uma data no passado, o assistente explica com leveza que os agendamentos devem ser feitos para datas futuras, e pede uma nova data no formato correto."
   },
   "selecionar_hora": {
-    "prompt": "O cliente ${nome} escolheu a data ${dataEscolhida} para o serviço '${servicoEscolhido}' com ${profissionalEscolhido}. Peça com animação que informe o horário desejado no formato HH:MM (exemplo: 14:30), mencionando que o Mega Studio Normandia funciona das 09:00 às 19:00. Diga que este é o próximo passo para um cuidado especial."
+    "prompt": "Com a data, serviço e profissional definidos, o assistente solicita o horário desejado no formato HH:MM (ex.: 14:30), explicando o horário de funcionamento do estúdio e que este é o próximo passo para o atendimento."
   },
   "selecionar_hora_invalido": {
-    "prompt": "O cliente ${nome} informou um horário inválido: '${horaInvalida}'. Explique com gentileza que no Mega Studio Normandia o horário deve ser no formato HH:MM (exemplo: 14:30) e peça que informe novamente. Reforce que estamos quase prontos para agendar um momento perfeito."
+    "prompt": "Se o horário estiver em formato inválido, o assistente explica o formato correto (HH:MM) com um exemplo e solicita que o cliente envie novamente o horário desejado."
   },
   "selecionar_hora_fora_horario": {
-    "prompt": "O cliente ${nome} escolheu um horário inválido: '${horaInvalida}'. Explique com um tom acolhedor que o Mega Studio Normandia funciona das 09:00 às 19:00, com últimos agendamentos às 18:30, e que os horários são em intervalos de 30 minutos (09:00, 09:30, etc.). Peça que informe um novo horário válido para continuarmos o agendamento com charme."
+    "prompt": "Caso o horário esteja fora do funcionamento (09:00 às 19:00), o assistente informa com carinho os horários válidos e pede um novo horário para continuar o agendamento."
   },
   "confirmar_agendamento": {
-    "prompt": "O cliente ${nome} escolheu o horário ${horaEscolhida} na data ${dataEscolhida} para o serviço '${servicoEscolhido}' com ${profissionalEscolhido}, com duração de ${duracao} minutos e valor de R$ ${valor}. Apresente um resumo elegante e peça confirmação, explicando que é só dizer 'confirmar' para finalizar ou 'cancelar' para voltar ao início no Mega Studio Normandia."
+    "prompt": "O assistente apresenta um resumo elegante do agendamento com todos os detalhes (data, hora, serviço, profissional, duração e valor) e solicita que o cliente confirme dizendo 'confirmar' ou cancele dizendo 'cancelar'."
   },
   "confirmar_agendamento_sucesso": {
-    "prompt": "Celebre o agendamento de ${nome} com entusiasmo e elegância no Mega Studio Normandia! Confirme os detalhes – serviço '${servicoEscolhido}' com ${profissionalEscolhido} no dia ${dataEscolhida} às ${horaEscolhida}, duração de ${duracao} minutos e valor de R$ ${valor} – como um convite para um momento inesquecível. Agradeça pela confiança e diga que estamos a 400 metros do metrô, prontos para qualquer dúvida."
+    "prompt": "Com a confirmação, o assistente celebra o agendamento e agradece pela confiança. Ele reforça os detalhes do agendamento e oferece ajuda caso o cliente tenha dúvidas, mencionando a localização próxima ao metrô."
   },
   "confirmar_agendamento_erro": {
-    "prompt": "Ocorreu um erro ao criar o agendamento para ${nome}. Crie uma mensagem de desculpas com empatia, explicando que houve um probleminha técnico no Mega Studio Normandia. Peça que tente novamente mais tarde ou entre em contato, reforçando que estamos loucos para cuidar dele(a)."
+    "prompt": "Se ocorrer um erro técnico ao confirmar o agendamento, o assistente pede desculpas com empatia e convida o cliente a tentar novamente ou entrar em contato, reforçando que estão prontos para recebê-lo."
   },
   "confirmar_agendamento_cancelar": {
-    "prompt": "O cliente ${nome} cancelou o agendamento. Crie uma mensagem amigável informando que está tudo bem, e que no Mega Studio Normandia estamos à disposição para quando ele(a) quiser reagendar. Apresente as opções: 'Agendar um serviço', 'Ver horários disponíveis' ou 'Tirar dúvidas'."
+    "prompt": "Ao cancelar o agendamento, o assistente responde de forma amigável e acolhedora, reforçando que o cliente pode reagendar quando quiser e oferece as opções disponíveis para continuar."
   },
   "confirmar_agendamento_invalido": {
-    "prompt": "O cliente ${nome} respondeu '${respostaInvalida}' em vez de 'confirmar' ou 'cancelar'. Explique com gentileza que no Mega Studio Normandia precisamos que ele(a) diga 'confirmar' para finalizar o agendamento ou 'cancelar' para voltar ao início, e peça uma nova resposta."
+    "prompt": "Se a resposta não for 'confirmar' nem 'cancelar', o assistente explica com gentileza as opções válidas e solicita uma nova resposta do cliente."
   },
   "erro": {
-    "prompt": "O cliente ${nome} enviou uma mensagem após um erro. Dê um olá caloroso como se fosse um recomeço no Mega Studio Normandia, pedindo desculpas pelo imprevisto, e apresente as opções com entusiasmo: 'Agendar um serviço', 'Ver horários disponíveis' ou 'Tirar dúvidas'."
+    "prompt": "Após um erro, o assistente retoma a conversa com um olá caloroso e apresenta novamente as opções disponíveis para seguir com o atendimento."
+  },
+  "ver_pacotes": {
+    "prompt": "Quando o cliente pede para ver os pacotes de serviços, o assistente responde com entusiasmo, apresenta os pacotes do Mega Studio Normandia e pergunta se o cliente deseja mais detalhes ou agendar."
+  },
+  "ver_precos": {
+    "prompt": "Quando o cliente solicita informações sobre preços, o assistente responde de forma simpática e clara, apresentando os valores dos serviços e convidando o cliente a agendar ou conhecer mais."
   }
 }
