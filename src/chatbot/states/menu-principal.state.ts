@@ -12,6 +12,7 @@ export class MenuPrincipalState implements ChatbotState {
     telefone: string,
     userMessage: string,
   ): Promise<void> {
+    console.log('MenuPrincipalState - handle:', { telefone, userMessage });
     const session = controller.getSession(telefone);
     const mensagemLowerCase = userMessage.toLowerCase().trim();
 
@@ -23,7 +24,15 @@ export class MenuPrincipalState implements ChatbotState {
       return;
     }
 
-    // Tratamento de intenções específicas
+    // Inicializa previousMessages se não existir
+    if (!session.previousMessages) {
+      session.previousMessages = [];
+    }
+
+    // Adiciona a mensagem do usuário ao histórico
+    session.previousMessages.push(`Cliente: ${userMessage}`);
+
+    // Tratamento de intenções que mudam o estado
     if (
       mensagemLowerCase.includes('agendar') ||
       mensagemLowerCase.includes('marcar')
@@ -34,56 +43,30 @@ export class MenuPrincipalState implements ChatbotState {
         'menu_principal_agendar',
         {
           nome: session.nome,
-        },
-      );
-    } else if (
-      mensagemLowerCase.includes('horário') ||
-      mensagemLowerCase.includes('disponível')
-    ) {
-      await this.messageFormatter.formatAndSend(
-        telefone,
-        'menu_principal_horarios',
-        {
-          nome: session.nome,
-        },
-      );
-    } else if (
-      mensagemLowerCase.includes('pacote') ||
-      mensagemLowerCase.includes('pacotes') ||
-      mensagemLowerCase.includes('combo')
-    ) {
-      await this.messageFormatter.formatAndSend(telefone, 'ver_pacotes', {
-        nome: session.nome,
-      });
-    } else if (
-      mensagemLowerCase.includes('preço') ||
-      mensagemLowerCase.includes('precos') ||
-      mensagemLowerCase.includes('quanto custa')
-    ) {
-      await this.messageFormatter.formatAndSend(telefone, 'ver_precos', {
-        nome: session.nome,
-      });
-    } else if (
-      mensagemLowerCase.includes('serviço') ||
-      mensagemLowerCase.includes('serviços') ||
-      mensagemLowerCase.includes('o que tem')
-    ) {
-      await this.messageFormatter.formatAndSend(telefone, 'ver_servicos', {
-        nome: session.nome,
-      });
-    } else {
-      // Resposta genérica
-      await this.messageFormatter.formatAndSend(
-        telefone,
-        'menu_principal_generico',
-        {
-          nome: session.nome,
           mensagem: userMessage,
+          previousMessages: session.previousMessages,
+          saudacaoEnviada: session.saudacaoEnviada || false,
         },
       );
+    } else {
+      // Interação livre
+      const context = {
+        nome: session.nome,
+        mensagem: userMessage,
+        previousMessages: session.previousMessages,
+        saudacaoEnviada: session.saudacaoEnviada || false,
+      };
+      const response = await this.messageFormatter.formatAndSend(
+        telefone,
+        'menu_principal_livre',
+        context,
+      );
+
+      // Adiciona a resposta ao histórico
+      session.previousMessages.push(`Mari: ${response}`);
     }
 
-    // Evita repetição da saudação padrão
+    // Marca a saudação como enviada após a primeira interação
     if (!session.saudacaoEnviada) {
       session.saudacaoEnviada = true;
     }

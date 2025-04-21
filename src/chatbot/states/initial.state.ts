@@ -7,7 +7,7 @@ import { MessageFormatterService } from '../services/message-formatter.service';
 interface ChatbotContext {
   conversationStage: string;
   previousMessages: string[];
-  nome?: string; // Optional property
+  nome?: string;
 }
 
 @Injectable()
@@ -22,6 +22,7 @@ export class InitialState implements ChatbotState {
     telefone: string,
     userMessage: string,
   ): Promise<void> {
+    console.log('InitialState - handle:', { telefone, userMessage });
     const session = controller.getSession(telefone) || {};
     const clientes =
       await this.trinksService.identificarClientePorTelefone(telefone);
@@ -47,7 +48,7 @@ export class InitialState implements ChatbotState {
       session.clienteId = cliente.id;
       session.nome = cliente.nome;
       session.etapa = 'menu_principal';
-      context.nome = cliente.nome; // Now valid
+      context.nome = cliente.nome;
       response = await this.messageFormatter.formatAndSend(
         telefone,
         'menu_principal_boas_vindas',

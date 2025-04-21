@@ -22,8 +22,11 @@ export class MessageFormatterService {
     promptKey: string,
     context: any = {},
   ): Promise<string> {
+    console.log('formatterService - promptKey:', promptKey);
     const rawPrompt = prompts[promptKey]?.prompt || '';
     const prompt = interpolatePrompt(rawPrompt, context);
+    console.log('formatterService - prompt', prompt);
+    console.log('formatterService - context', context);
     const response = await this.openAiService.generateResponse(
       prompt,
       context,

@@ -27,6 +27,7 @@ export class StateFactory {
   ) {}
 
   getState(etapa: string): ChatbotState {
+    console.log('StateFactory - getState:', etapa);
     switch (etapa) {
       case 'inicial':
         return this.initialState;
