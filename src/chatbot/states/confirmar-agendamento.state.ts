@@ -20,15 +20,6 @@ export class ConfirmarAgendamentoState implements ChatbotState {
     const resposta = userMessage.toLowerCase().trim();
 
     if (resposta === 'confirmar') {
-      console.log(
-        '**********',
-        session.clienteId,
-        session.servicoSelecionado.id,
-        session.profissionalSelecionado.id,
-        session.dataHoraInicio,
-        session.duracao,
-        session.valor,
-      );
       try {
         await this.agendamentoService.criarAgendamento(
           session.clienteId,

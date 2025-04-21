@@ -18,7 +18,6 @@ export class SelecionarServicoState implements ChatbotState {
   ): Promise<void> {
     const session = controller.getSession(telefone);
 
-    // Se a sessão não tiver serviços listados, buscar e formatar a lista
     if (!session.servicos) {
       const servicos = await this.agendamentoService.listarServicos();
       session.servicos = servicos;
@@ -27,7 +26,6 @@ export class SelecionarServicoState implements ChatbotState {
         .map((s, index) => `${index + 1}. ${s.nome}`)
         .join('\n');
 
-      // Enviar mensagem com a lista de serviços
       await this.messageFormatter.formatAndSend(
         telefone,
         'menu_principal_agendar',
@@ -40,7 +38,6 @@ export class SelecionarServicoState implements ChatbotState {
       return;
     }
 
-    // Processar a escolha do usuário
     const escolha = parseInt(userMessage.trim());
 
     if (isNaN(escolha) || escolha < 1 || escolha > session.servicos.length) {
@@ -48,7 +45,6 @@ export class SelecionarServicoState implements ChatbotState {
         .map((s, index) => `${index + 1}. ${s.nome}`)
         .join('\n');
 
-      // Enviar mensagem de erro para escolha inválida
       await this.messageFormatter.formatAndSend(
         telefone,
         'selecionar_servico_invalido',
@@ -62,12 +58,10 @@ export class SelecionarServicoState implements ChatbotState {
       return;
     }
 
-    // Atualizar sessão com o serviço selecionado
     const servicoIndex = escolha - 1;
     session.servicoSelecionado = session.servicos[servicoIndex];
     session.etapa = 'selecionar_profissional';
 
-    // Listar profissionais e enviar mensagem
     const profissionais = await this.agendamentoService.listarProfissionais();
     session.profissionais = profissionais;
     const listaFormatada = profissionais
@@ -84,7 +78,6 @@ export class SelecionarServicoState implements ChatbotState {
       },
     );
 
-    // Atualizar a sessão no controller
     controller.updateSession(telefone, session);
   }
 }

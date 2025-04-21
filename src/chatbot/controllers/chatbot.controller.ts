@@ -27,7 +27,6 @@ export class ChatbotController {
       .trim();
 
     const session = this.getSession(telefoneFormatado);
-    console.log('Sessão atual recuperada:', session);
 
     const currentState = session.etapa || 'inicial';
     const stateHandler = this.stateFactory.getState(currentState);

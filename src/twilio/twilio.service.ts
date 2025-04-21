@@ -16,7 +16,6 @@ export class TwilioService implements OnModuleInit {
   }
 
   onModuleInit() {
-    // Validar configurações na inicialização do módulo
     this.validateConfigurations();
   }
 
@@ -60,7 +59,6 @@ export class TwilioService implements OnModuleInit {
     const toNumber = this.formatWhatsAppNumber(to);
 
     try {
-      console.log(`Enviando mensagem de ${fromNumber} para ${toNumber}`);
       return await this.client.messages.create({
         from: fromNumber,
         to: toNumber,
