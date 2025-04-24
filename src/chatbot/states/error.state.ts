@@ -4,7 +4,7 @@ import { ChatbotController } from '../controllers/chatbot.controller';
 import { MessageFormatterService } from '../services/message-formatter.service';
 
 @Injectable()
-export class ErroState implements ChatbotState {
+export class ErrorState implements ChatbotState {
   constructor(private readonly messageFormatter: MessageFormatterService) {}
 
   async handle(
@@ -13,13 +13,7 @@ export class ErroState implements ChatbotState {
     userMessage: string,
   ): Promise<void> {
     const session = controller.getSession(telefone);
-
-    session.etapa = 'menu_principal';
-
-    await this.messageFormatter.formatAndSend(telefone, 'erro', {
-      nome: session.nome,
-    });
-
+    await this.messageFormatter.sendSystemUnavailableMessage(telefone);
     controller.updateSession(telefone, session);
   }
 }

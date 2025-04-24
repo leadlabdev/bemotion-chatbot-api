@@ -3,7 +3,7 @@ import { ChatbotState } from './chatbot-state.interface';
 import { InitialState } from './initial.state';
 import { SolicitarNomeState } from './solicitar-nome.state';
 import { ConfirmarAgendamentoState } from './confirmar-agendamento.state';
-import { ErroState } from './erro.state';
+import { ErrorState } from './error.state';
 import { SelecionarHoraState } from './selecionar-hora.state';
 import { SelecionarDataState } from './selecionar-data.state';
 import { SelecionarProfissionalState } from './selecionar-profissional.state';
@@ -23,7 +23,7 @@ export class StateFactory {
     private readonly selecionarDataState: SelecionarDataState,
     private readonly selecionarHoraState: SelecionarHoraState,
     private readonly confirmarAgendamentoState: ConfirmarAgendamentoState,
-    private readonly erroState: ErroState,
+    private readonly errorState: ErrorState,
   ) {}
 
   getState(etapa: string): ChatbotState {
@@ -48,7 +48,7 @@ export class StateFactory {
       case 'confirmar_agendamento':
         return this.confirmarAgendamentoState;
       case 'erro':
-        return this.erroState;
+        return this.errorState;
       default:
         return this.initialState;
     }

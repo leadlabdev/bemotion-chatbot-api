@@ -18,11 +18,36 @@ export class SelecionarServicoState implements ChatbotState {
   ): Promise<void> {
     const session = controller.getSession(telefone);
 
+    // Verificar se temos serviços, caso contrário, inicializar
     if (!session.servicos) {
-      const servicos = await this.agendamentoService.listarServicos();
-      session.servicos = servicos;
+      try {
+        const servicos = await this.agendamentoService.listarServicos();
+        session.servicos = servicos;
 
-      const listaFormatada = servicos
+        const listaFormatada = servicos
+          .map((s, index) => `${index + 1}. ${s.nome}`)
+          .join('\n');
+
+        await this.messageFormatter.formatAndSend(
+          telefone,
+          'menu_principal_agendar',
+          {
+            nome: session.nome,
+            listaFormatada,
+          },
+        );
+        controller.updateSession(telefone, session);
+        return;
+      } catch (error) {
+        console.error('Erro ao listar serviços:', error);
+        await this.messageFormatter.sendSystemUnavailableMessage(telefone);
+        return;
+      }
+    }
+
+    // Checar se a mensagem é "agendar", nesse caso, re-exibir a lista
+    if (userMessage.toLowerCase().trim() === 'agendar') {
+      const listaFormatada = session.servicos
         .map((s, index) => `${index + 1}. ${s.nome}`)
         .join('\n');
 
@@ -34,10 +59,10 @@ export class SelecionarServicoState implements ChatbotState {
           listaFormatada,
         },
       );
-      controller.updateSession(telefone, session);
       return;
     }
 
+    // Processar tentativa de escolha de serviço
     const escolha = parseInt(userMessage.trim());
 
     if (isNaN(escolha) || escolha < 1 || escolha > session.servicos.length) {
@@ -58,6 +83,7 @@ export class SelecionarServicoState implements ChatbotState {
       return;
     }
 
+    // Resto do código permanece igual...
     const servicoIndex = escolha - 1;
     session.servicoSelecionado = session.servicos[servicoIndex];
     session.etapa = 'selecionar_profissional';

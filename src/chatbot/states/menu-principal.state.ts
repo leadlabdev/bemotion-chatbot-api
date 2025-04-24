@@ -2,10 +2,14 @@ import { Injectable } from '@nestjs/common';
 import { ChatbotState } from './chatbot-state.interface';
 import { ChatbotController } from '../controllers/chatbot.controller';
 import { MessageFormatterService } from '../services/message-formatter.service';
+import { AgendamentoService } from 'src/agendamentos/agendamentos.service';
 
 @Injectable()
 export class MenuPrincipalState implements ChatbotState {
-  constructor(private readonly messageFormatter: MessageFormatterService) {}
+  constructor(
+    private readonly messageFormatter: MessageFormatterService,
+    private readonly agendamentoService: AgendamentoService, // Adicione esta dependência
+  ) {}
 
   async handle(
     controller: ChatbotController,
@@ -27,20 +31,36 @@ export class MenuPrincipalState implements ChatbotState {
     }
 
     // Tratamento de intenções que mudam o estado
-    if (
-      mensagemLowerCase.includes('agendar') ||
-      mensagemLowerCase.includes('marcar')
-    ) {
-      session.etapa = 'selecionar_servico';
-      await this.messageFormatter.formatAndSend(
-        telefone,
-        'menu_principal_agendar',
-        {
-          nome: session.nome,
-          mensagem: userMessage,
-          contextChanged: true, // Indica mudança de contexto
-        },
-      );
+    if (mensagemLowerCase.trim() === 'agendar') {
+      try {
+        // Buscar serviços aqui mesmo
+        const servicos = await this.agendamentoService.listarServicos();
+
+        // Preparar a sessão para o próximo estado
+        session.etapa = 'selecionar_servico';
+        session.servicos = servicos;
+
+        // Formatar e enviar a lista
+        const listaFormatada = servicos
+          .map((s, index) => `${index + 1}. ${s.nome}`)
+          .join('\n');
+
+        await this.messageFormatter.formatAndSend(
+          telefone,
+          'menu_principal_agendar',
+          {
+            nome: session.nome,
+            listaFormatada,
+          },
+        );
+
+        controller.updateSession(telefone, session);
+        return;
+      } catch (error) {
+        console.error('Erro ao listar serviços:', error);
+        await this.messageFormatter.sendSystemUnavailableMessage(telefone);
+        return;
+      }
     } else {
       // Interação livre - apenas enviar a mensagem do usuário
       await this.messageFormatter.formatAndSend(

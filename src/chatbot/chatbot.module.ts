@@ -14,7 +14,7 @@ import { SelecionarProfissionalState } from './states/selecionar-profissional.st
 import { SelecionarDataState } from './states/selecionar-data.state';
 import { SelecionarHoraState } from './states/selecionar-hora.state';
 import { ConfirmarAgendamentoState } from './states/confirmar-agendamento.state';
-import { ErroState } from './states/erro.state';
+import { ErrorState } from './states/error.state';
 import { StateFactory } from './states/state.factory';
 import { ChatbotController } from './controllers/chatbot.controller';
 import { HttpModule } from '@nestjs/axios';
@@ -49,7 +49,7 @@ import {
     SelecionarDataState,
     SelecionarHoraState,
     ConfirmarAgendamentoState,
-    ErroState,
+    ErrorState,
     StateFactory,
   ],
   controllers: [ChatbotController],

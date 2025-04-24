@@ -89,33 +89,57 @@ export class TrinksService {
   }
 
   async identificarClientePorTelefone(telefone: string) {
-    // Remover o prefixo "whatsapp:" e o código de país "+55"
-    const telefoneFormatado = telefone
-      .replace('whatsapp:', '')
-      .replace('+55', '')
-      .trim();
-    console.log('Telefone formatado para consulta:', telefoneFormatado);
+    try {
+      // Remover o prefixo "whatsapp:" e o código de país "+55"
+      const telefoneFormatado = telefone
+        .replace('whatsapp:', '')
+        .replace('+55', '')
+        .trim();
+      console.log('Telefone formatado para consulta:', telefoneFormatado);
 
-    const url = `https://api.trinks.com/v1/clientes?telefone=${telefoneFormatado}&incluirDetalhes=false`;
-    const apiKey = 'kdy1HCm2Is6Oj4EYeNupN2la9k2dYqot7vorGi89';
-    const estabelecimentoId = '54027'; // Substitua pelo seu ID
+      const url = `https://api.trinks.com/v1/clientes?telefone=${telefoneFormatado}&incluirDetalhes=false`;
+      const apiKey = 'kdy1HCm2Is6Oj4EYeNupN2la9k2dYqot7vorGi89';
+      const estabelecimentoId = '54027'; // Substitua pelo seu ID
 
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'X-Api-Key': apiKey,
-        accept: 'application/json',
-        estabelecimentoId: estabelecimentoId,
-      },
-    });
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'X-Api-Key': apiKey,
+          accept: 'application/json',
+          estabelecimentoId: estabelecimentoId,
+        },
+      });
 
-    const data = await response.json();
-    console.log('Resposta da API:', data); // Verifique os dados retornados
+      const data = await response.json();
+      console.log('Resposta da API:', data);
 
-    if (data.data && data.data.length > 0) {
-      return data.data; // Retorna o array de clientes
-    } else {
-      return []; // Retorna um array vazio caso nenhum cliente seja encontrado
+      // Check for API error messages
+      if (data.message && typeof data.message === 'string') {
+        return {
+          success: false,
+          error: 'api_error',
+          message: data.message,
+        };
+      }
+
+      if (data.data && data.data.length > 0) {
+        return {
+          success: true,
+          clientes: data.data,
+        };
+      } else {
+        return {
+          success: true,
+          clientes: [],
+        };
+      }
+    } catch (error) {
+      console.error('Erro ao consultar a API Trinks:', error);
+      return {
+        success: false,
+        error: 'connection_error',
+        message: 'Falha na conexão com o sistema',
+      };
     }
   }
 

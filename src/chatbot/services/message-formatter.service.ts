@@ -26,24 +26,20 @@ export class MessageFormatterService {
 
     let effectivePrompt = '';
     let effectiveContext = { ...context };
-
-    // Tratamento especial para 'menu_principal_livre' e 'menu_principal_boas_vindas'
+    console.log('effectiveContext', effectiveContext);
     if (promptKey === 'menu_principal_livre') {
-      // Envia apenas a mensagem sem prompt adicional
       effectiveContext = {
         mensagem: context.mensagem,
         nome: context.nome,
         isFirstMessage: false,
       };
     } else if (promptKey === 'menu_principal_boas_vindas') {
-      // Identifica primeiro contato
       effectiveContext = {
         mensagem: `Olá, sou um cliente novo.`,
         nome: context.nome,
         isFirstMessage: true,
       };
     } else {
-      // Para outros casos, usa os prompts configurados
       effectivePrompt = interpolatePrompt(
         prompts[promptKey]?.prompt || '',
         context,
@@ -51,10 +47,12 @@ export class MessageFormatterService {
       effectiveContext.isFirstMessage = !context.saudacaoEnviada;
     }
 
-    // Log apenas para depuração
-    console.log('formatterService - context', effectiveContext);
-
-    // Gera e envia a resposta
+    console.log(
+      '**************vai pro gpt',
+      effectivePrompt,
+      effectiveContext,
+      telefone,
+    );
     const response = await this.openAiService.generateResponse(
       effectivePrompt,
       effectiveContext,
@@ -63,5 +61,12 @@ export class MessageFormatterService {
 
     await this.twilioService.sendMessage(telefone, response);
     return response;
+  }
+
+  async sendSystemUnavailableMessage(telefone: string): Promise<string> {
+    const msg =
+      'Desculpe, estamos com uma indisponibilidade temporária no sistema. Por favor, tente novamente mais tarde ou entre em contato pelo telefone (11) 5096-6043.';
+    await this.twilioService.sendMessage(telefone, msg);
+    return msg;
   }
 }
