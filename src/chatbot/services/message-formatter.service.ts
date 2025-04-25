@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { GptService } from 'src/openai/openai.service';
-import { iniciarAgendamentoPrompts } from 'src/prompts/iniciar-cadastro-cliente';
+import { iniciarAgendamentoPrompts } from 'src/prompts/iniciar-agendamento';
 import { TwilioService } from 'src/twilio/twilio.service';
 
 interface Context {
@@ -19,39 +18,17 @@ interface Context {
 
 @Injectable()
 export class MessageFormatterService {
-  private directMessagePrompts = [
-    'selecionar_servico',
-    'selecionar_servico_invalido',
-    'selecionar_profissional',
-    'sem_profissionais_disponiveis',
-    'selecionar_data',
-    'erro_data_invalida',
-    'selecionar_horario',
-    'sem_horarios_disponiveis',
-    'confirmar_agendamento',
-    'confirmar_agendamento_sucesso',
-    'confirmar_agendamento_cancelar',
-    'confirmar_agendamento_invalido',
-    'confirmar_agendamento_erro',
-  ];
-
   private mensagens = {
     ...iniciarAgendamentoPrompts,
     menu_principal: (nome: string) => ({
       mensagem: `Olá, ${nome}, tudo bem? Me chamo Mari, muito prazer! Seja bem-vinda ao Mega Studio Normandia! 😊 Qual procedimento você está precisando no momento?`,
-      isFirstMessage: true,
     }),
-
     default: (nome: string) => ({
       mensagem: `Desculpe, ${nome}, não entendi. Vamos tentar novamente?`,
-      isFirstMessage: false,
     }),
   };
 
-  constructor(
-    private readonly openAiService: GptService,
-    private readonly twilioService: TwilioService,
-  ) {}
+  constructor(private readonly twilioService: TwilioService) {}
 
   async formatAndSend(
     telefone: string,
@@ -61,13 +38,26 @@ export class MessageFormatterService {
     console.log('formatterService - promptKey:', promptKey);
 
     const nome = context.nome || 'Cliente';
+    // Log arguments for debugging
+    console.log('Arguments for prompt:', {
+      nome,
+      listaFormatada: context.listaFormatada,
+      escolhaInvalida: context.escolhaInvalida,
+      servicoEscolhido: context.servicoEscolhido,
+      profissionalEscolhido: context.profissionalEscolhido,
+      dataEscolhida: context.dataEscolhida,
+      horarioEscolhido: context.horarioEscolhido,
+      duracao: context.duracao,
+      valor: context.valor,
+    });
+
     const mensagemConfig = this.mensagens[promptKey]
       ? this.mensagens[promptKey](
           nome,
           context.listaFormatada,
           context.escolhaInvalida,
-          context.profissionalEscolhido,
           context.servicoEscolhido,
+          context.profissionalEscolhido,
           context.dataEscolhida,
           context.horarioEscolhido,
           context.duracao,
@@ -75,34 +65,22 @@ export class MessageFormatterService {
         )
       : this.mensagens.default(nome);
 
-    const effectiveContext: Context = { ...context, nome, ...mensagemConfig };
+    // Ensure mensagem is defined
+    const effectiveContext: Context = {
+      ...context,
+      nome,
+      mensagem: mensagemConfig.mensagem || 'Mensagem não configurada.',
+    };
     console.log('effectiveContext', effectiveContext);
 
-    if (this.directMessagePrompts.includes(promptKey)) {
-      await this.twilioService.sendMessage(
-        telefone,
-        effectiveContext.mensagem!,
-      );
-      return effectiveContext.mensagem!;
+    // Validate mensagem before sending
+    if (!effectiveContext.mensagem) {
+      console.error('No message defined for prompt:', promptKey);
+      effectiveContext.mensagem = 'Erro interno. Por favor, tente novamente.';
     }
 
-    try {
-      let gptInput = '';
-      if (promptKey === 'menu_principal_livre') {
-        gptInput = effectiveContext.mensagem!;
-      }
-      const response = await this.openAiService.generateResponse(
-        gptInput,
-        effectiveContext,
-        telefone,
-      );
-      await this.twilioService.sendMessage(telefone, response);
-      return response;
-    } catch (error) {
-      console.error('Erro ao gerar resposta:', error);
-      const errorMsg = await this.sendSystemUnavailableMessage(telefone);
-      throw error;
-    }
+    await this.twilioService.sendMessage(telefone, effectiveContext.mensagem);
+    return effectiveContext.mensagem;
   }
 
   async sendSystemUnavailableMessage(telefone: string): Promise<string> {

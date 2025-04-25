@@ -102,7 +102,7 @@ export class SelecionarServicoState implements ChatbotState {
       }
 
       const listaFormatada = profissionais
-        .map((p, index) => `${index + 1}. ${p.nome}`)
+        .map((p, index) => `${index + 1}. ${p.apelido || p.nome}`)
         .join('\n');
 
       // Atualizar sessão

@@ -1,4 +1,3 @@
-// gpt-chat.service.ts
 import { Injectable } from '@nestjs/common';
 import { GptService } from 'src/openai/openai.service';
 import { TwilioService } from 'src/twilio/twilio.service';
