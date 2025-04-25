@@ -8,7 +8,7 @@ export class TrinksService {
   private readonly apiUrl: string;
   private readonly apiKey: string | undefined;
   private readonly estabelecimentoId: string | undefined;
-
+  private readonly allowedProfessionalIds: number[] = [702154, 702165];
   constructor(
     private readonly httpService: HttpService,
     private readonly configService: ConfigService,
@@ -20,33 +20,11 @@ export class TrinksService {
     );
   }
 
-  async getAgendamentos() {
-    try {
-      const response = await firstValueFrom(
-        this.httpService.get(this.apiUrl, {
-          headers: {
-            'X-Api-Key': this.apiKey,
-            accept: 'application/json',
-            estabelecimentoId: this.estabelecimentoId,
-          },
-        }),
-      );
-
-      console.log('Resposta da API Trinks:', response.data); // 🛠️ Debug
-
-      // Retorna o array correto de agendamentos
-      return Array.isArray(response.data.data) ? response.data.data : [];
-    } catch (error) {
-      console.error('Erro ao buscar agendamentos:', error);
-      throw new Error('Erro ao buscar agendamentos.');
-    }
-  }
-
-  async getServicos() {
+  async listarServicos() {
     try {
       const response = await firstValueFrom(
         this.httpService.get(
-          'https://api.trinks.com/v1/servicos?somenteVisiveisCliente=true',
+          'https://api.trinks.com/v1/servicos?nome=(IA)&categoria=IA&somenteVisiveisCliente=false',
           {
             headers: {
               'X-Api-Key': this.apiKey,
@@ -65,12 +43,10 @@ export class TrinksService {
     }
   }
 
-  async getProfissionaisAgenda(date: string) {
+  async listarProfissionais(): Promise<any[]> {
     try {
-      const url = `https://api.trinks.com/v1/agendamentos/profissionais/${date}`;
-
       const response = await firstValueFrom(
-        this.httpService.get(url, {
+        this.httpService.get('https://api.trinks.com/v1/profissionais', {
           headers: {
             'X-Api-Key': this.apiKey,
             accept: 'application/json',
@@ -79,8 +55,45 @@ export class TrinksService {
         }),
       );
 
-      console.log('Resposta da API Trinks (Profissionais):', response.data); // 🛠️ Debug
+      console.log('Resposta da API Trinks (Profissionais):', response.data);
+      const professionals = Array.isArray(response.data.data)
+        ? response.data.data
+        : [];
+      return professionals.filter((pro) =>
+        this.allowedProfessionalIds.includes(pro.id),
+      );
+    } catch (error) {
+      console.error(
+        'Erro ao buscar profissionais:',
+        error.response?.data || error.message,
+      );
+      throw new Error('Erro ao buscar profissionais.');
+    }
+  }
+  async listarProfissionaisComAgenda(
+    date: string,
+    profissionalId?: number,
+  ): Promise<any[]> {
+    try {
+      const url = new URL(`${this.apiUrl}/profissionais/${date}`);
+      if (profissionalId) {
+        url.searchParams.append('profissionalId', profissionalId.toString());
+      }
 
+      const response = await firstValueFrom(
+        this.httpService.get(url.toString(), {
+          headers: {
+            'X-Api-Key': this.apiKey,
+            accept: 'application/json',
+            estabelecimentoId: this.estabelecimentoId,
+          },
+        }),
+      );
+
+      console.log(
+        'Resposta da API Trinks (Profissionais com Agenda):',
+        response.data,
+      );
       return Array.isArray(response.data.data) ? response.data.data : [];
     } catch (error) {
       console.error('Erro ao buscar profissionais com agenda:', error);
@@ -219,6 +232,7 @@ export class TrinksService {
       return response.data;
     } catch (error) {
       console.error('Erro ao criar agendamento:', error);
+
       throw new Error('Erro ao criar agendamento.');
     }
   }

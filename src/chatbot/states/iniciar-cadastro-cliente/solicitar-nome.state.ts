@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import { ChatbotState } from './chatbot-state.interface';
-import { ChatbotController } from '../controllers/chatbot.controller';
-import { MessageFormatterService } from '../services/message-formatter.service';
+import { ChatbotState } from '../chatbot-state.interface';
+import { MessageFormatterService } from 'src/chatbot/services/message-formatter.service';
+import { ChatbotController } from 'src/chatbot/controllers/chatbot.controller';
 
 @Injectable()
 export class SolicitarNomeState implements ChatbotState {

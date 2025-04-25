@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { TrinksService } from 'src/trinks/trinks.service';
-import { ChatbotState } from './chatbot-state.interface';
-import { ChatbotController } from '../controllers/chatbot.controller';
-import { MessageFormatterService } from '../services/message-formatter.service';
+import { ChatbotState } from '../chatbot-state.interface';
+import { MessageFormatterService } from 'src/chatbot/services/message-formatter.service';
+import { ChatbotController } from 'src/chatbot/controllers/chatbot.controller';
 
 @Injectable()
 export class SolicitarSexoState implements ChatbotState {
@@ -24,7 +24,7 @@ export class SolicitarSexoState implements ChatbotState {
         'solicitar_sexo_invalido',
         {
           nome: session.nome,
-          respostaInvalida: userMessage,
+          escolhaInvalida: userMessage,
         },
       );
       return;

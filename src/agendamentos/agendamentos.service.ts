@@ -11,26 +11,6 @@ export class AgendamentoService {
     @InjectModel(Agendamento.name) private agendamentoModel: Model<Agendamento>,
   ) {}
 
-  // Profissionais mockados
-  private profissionais = [
-    { id: 702154, nome: 'Profissional Teste' },
-    { id: 702165, nome: 'Manicure Teste' },
-  ];
-
-  // Serviços mockados
-  private servicos = [
-    { id: 4858024, nome: 'MANICURE' },
-    { id: 5666359, nome: 'Corte (Senior)' },
-  ];
-
-  async listarServicos() {
-    return this.servicos;
-  }
-
-  async listarProfissionais() {
-    return this.profissionais;
-  }
-
   async criarAgendamento(
     clienteId: number,
     servicoId: number,
@@ -40,6 +20,16 @@ export class AgendamentoService {
     valor: number,
     observacoes: string,
   ) {
+    console.log(
+      'payload',
+      clienteId,
+      servicoId,
+      profissionalId,
+      dataHoraInicio,
+      duracaoEmMinutos,
+      valor,
+      observacoes,
+    );
     // Criar o agendamento no Trinks (lógica original mantida)
     const agendamentoTrinks = await this.trinksService.createAgendamento(
       clienteId,

@@ -1,28 +1,18 @@
 import { Injectable } from '@nestjs/common';
 import { ChatbotState } from './chatbot-state.interface';
 import { InitialState } from './initial.state';
-import { SolicitarNomeState } from './solicitar-nome.state';
-import { ConfirmarAgendamentoState } from './confirmar-agendamento.state';
 import { ErrorState } from './error.state';
-import { SelecionarHoraState } from './selecionar-hora.state';
-import { SelecionarDataState } from './selecionar-data.state';
-import { SelecionarProfissionalState } from './selecionar-profissional.state';
-import { SolicitarSexoState } from './solicitar-sexo.state';
 import { MenuPrincipalState } from './menu-principal.state';
-import { SelecionarServicoState } from './selecionar-servico.state';
+import { IniciarCadastroCliente } from './iniciar-cadastro-cliente';
+import { IniciarAgendamento } from './iniciar-agendamento';
 
 @Injectable()
 export class StateFactory {
   constructor(
     private readonly initialState: InitialState,
-    private readonly solicitarNomeState: SolicitarNomeState,
-    private readonly solicitarSexoState: SolicitarSexoState,
+    private readonly iniciarCadastroClienteState: IniciarCadastroCliente,
     private readonly menuPrincipalState: MenuPrincipalState,
-    private readonly selecionarServicoState: SelecionarServicoState,
-    private readonly selecionarProfissionalState: SelecionarProfissionalState,
-    private readonly selecionarDataState: SelecionarDataState,
-    private readonly selecionarHoraState: SelecionarHoraState,
-    private readonly confirmarAgendamentoState: ConfirmarAgendamentoState,
+    private readonly iniciarAgendamento: IniciarAgendamento,
     private readonly errorState: ErrorState,
   ) {}
 
@@ -31,25 +21,25 @@ export class StateFactory {
     switch (etapa) {
       case 'inicial':
         return this.initialState;
+      case 'iniciar_cadastro_cliente':
+        return this.iniciarCadastroClienteState;
       case 'solicitar_nome':
-        return this.solicitarNomeState;
       case 'solicitar_sexo':
-        return this.solicitarSexoState;
+        return this.iniciarCadastroClienteState.getChildState(etapa);
       case 'menu_principal':
         return this.menuPrincipalState;
+      case 'iniciar_agendamento':
+        return this.iniciarAgendamento;
       case 'selecionar_servico':
-        return this.selecionarServicoState;
       case 'selecionar_profissional':
-        return this.selecionarProfissionalState;
       case 'selecionar_data':
-        return this.selecionarDataState;
       case 'selecionar_hora':
-        return this.selecionarHoraState;
       case 'confirmar_agendamento':
-        return this.confirmarAgendamentoState;
+        return this.iniciarAgendamento.getChildState(etapa);
       case 'erro':
         return this.errorState;
       default:
+        console.warn(`Estado desconhecido: ${etapa}. Retornando InitialState.`);
         return this.initialState;
     }
   }

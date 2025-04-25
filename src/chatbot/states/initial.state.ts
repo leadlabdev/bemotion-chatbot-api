@@ -67,12 +67,16 @@ export class InitialState implements ChatbotState {
     telefone: string,
     userMessage: string,
   ): Promise<void> {
-    session.etapa = 'solicitar_nome';
+    session.etapa = 'iniciar_cadastro_cliente';
 
-    await this.messageFormatter.formatAndSend(telefone, 'solicitar_nome', {
-      mensagem: userMessage,
-      isFirstMessage: true,
-    });
+    await this.messageFormatter.formatAndSend(
+      telefone,
+      'iniciar_cadastro_cliente',
+      {
+        mensagem: userMessage,
+        isFirstMessage: true,
+      },
+    );
     controller.updateSession(telefone, session);
   }
 
@@ -86,14 +90,10 @@ export class InitialState implements ChatbotState {
     session.nome = cliente.nome;
     session.etapa = 'menu_principal';
 
-    await this.messageFormatter.formatAndSend(
-      telefone,
-      'menu_principal_boas_vindas',
-      {
-        nome: cliente.nome,
-        isFirstMessage: true,
-      },
-    );
+    await this.messageFormatter.formatAndSend(telefone, 'menu_principal', {
+      nome: cliente.nome,
+      isFirstMessage: true,
+    });
     controller.updateSession(telefone, session);
   }
 

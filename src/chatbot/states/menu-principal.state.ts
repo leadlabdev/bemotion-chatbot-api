@@ -2,13 +2,15 @@ import { Injectable } from '@nestjs/common';
 import { ChatbotState } from './chatbot-state.interface';
 import { ChatbotController } from '../controllers/chatbot.controller';
 import { MessageFormatterService } from '../services/message-formatter.service';
-import { AgendamentoService } from 'src/agendamentos/agendamentos.service';
+import { TrinksService } from 'src/trinks/trinks.service';
+import { MensagemLivreService } from '../services/message-livre.service';
 
 @Injectable()
 export class MenuPrincipalState implements ChatbotState {
   constructor(
     private readonly messageFormatter: MessageFormatterService,
-    private readonly agendamentoService: AgendamentoService, // Adicione esta dependência
+    private readonly messageLivre: MensagemLivreService,
+    private readonly trinksService: TrinksService,
   ) {}
 
   async handle(
@@ -20,56 +22,52 @@ export class MenuPrincipalState implements ChatbotState {
     const session = controller.getSession(telefone);
     const mensagemLowerCase = userMessage.toLowerCase().trim();
 
-    // Se não há nome, redireciona para solicitar_nome
+    // Se não há nome, redireciona para iniciar_cadasto_cliente
     if (!session.nome) {
-      session.etapa = 'solicitar_nome';
-      await this.messageFormatter.formatAndSend(telefone, 'solicitar_nome', {
-        mensagem: userMessage,
-      });
+      session.etapa = 'iniciar_cadastro_cliente';
+      await this.messageFormatter.formatAndSend(
+        telefone,
+        'iniciar_cadastro_cliente',
+        { mensagem: userMessage },
+      );
       controller.updateSession(telefone, session);
       return;
     }
 
     // Tratamento de intenções que mudam o estado
-    if (mensagemLowerCase.trim() === 'agendar') {
+    if (mensagemLowerCase === 'agendar') {
       try {
-        // Buscar serviços aqui mesmo
-        const servicos = await this.agendamentoService.listarServicos();
+        const servicos = await this.trinksService.listarServicos();
+        if (!servicos || servicos.length === 0) {
+          console.error('Nenhum serviço retornado pela API.');
+          await this.messageFormatter.sendSystemUnavailableMessage(telefone);
+          return;
+        }
 
-        // Preparar a sessão para o próximo estado
-        session.etapa = 'selecionar_servico';
         session.servicos = servicos;
+        session.etapa = 'selecionar_servico';
 
-        // Formatar e enviar a lista
         const listaFormatada = servicos
           .map((s, index) => `${index + 1}. ${s.nome}`)
           .join('\n');
 
         await this.messageFormatter.formatAndSend(
           telefone,
-          'menu_principal_agendar',
-          {
-            nome: session.nome,
-            listaFormatada,
-          },
+          'selecionar_servico',
+          { nome: session.nome, listaFormatada },
         );
 
         controller.updateSession(telefone, session);
-        return;
       } catch (error) {
         console.error('Erro ao listar serviços:', error);
         await this.messageFormatter.sendSystemUnavailableMessage(telefone);
-        return;
       }
     } else {
-      // Interação livre - apenas enviar a mensagem do usuário
-      await this.messageFormatter.formatAndSend(
+      // Interação livre - enviar a mensagem do usuário para o GPT
+      await this.messageLivre.handleFreeFormMessage(
         telefone,
-        'menu_principal_livre',
-        {
-          nome: session.nome,
-          mensagem: userMessage,
-        },
+        userMessage, // Enviar diretamente a mensagem do usuário como primeiro parâmetro
+        session.nome, // Enviar o nome como segundo parâmetro
       );
     }
 

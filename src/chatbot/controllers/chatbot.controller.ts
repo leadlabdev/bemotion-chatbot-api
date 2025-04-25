@@ -24,26 +24,11 @@ export class ChatbotController {
     const telefoneFormatado = From.replace('whatsapp:', '')
       .replace('+55', '')
       .trim();
-    console.log('ChatbotController - handleIncomingMessage:', {
-      From,
-      telefoneFormatado,
-      userMessage,
-    });
 
     const session = this.getSession(telefoneFormatado);
-    console.log('ChatbotController - session:', session);
-
     const currentState = session.etapa || 'inicial';
-    console.log('ChatbotController - currentState:', currentState);
-
     const stateHandler = this.stateFactory.getState(currentState);
-    console.log(
-      'ChatbotController - stateHandler:',
-      stateHandler.constructor.name,
-    );
-
     await stateHandler.handle(this, telefoneFormatado, userMessage);
-
     return { success: true };
   }
 }
