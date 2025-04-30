@@ -47,20 +47,6 @@ export class InitialState implements ChatbotState {
     controller.updateSession(telefone, session);
   }
 
-  private async handleError(
-    session: any,
-    controller: ChatbotController,
-    telefone: string,
-    result: any,
-  ): Promise<void> {
-    session.etapa = 'erro';
-    session.error = result.error;
-    session.errorMessage = result.message;
-
-    await this.messageFormatter.sendSystemUnavailableMessage(telefone);
-    controller.updateSession(telefone, session);
-  }
-
   private async handleNewClient(
     session: any,
     controller: ChatbotController,
@@ -74,7 +60,6 @@ export class InitialState implements ChatbotState {
       'iniciar_cadastro_cliente',
       {
         mensagem: userMessage,
-        isFirstMessage: true,
       },
     );
     controller.updateSession(telefone, session);
@@ -92,8 +77,21 @@ export class InitialState implements ChatbotState {
 
     await this.messageFormatter.formatAndSend(telefone, 'menu_principal', {
       nome: cliente.nome,
-      isFirstMessage: true,
     });
+    controller.updateSession(telefone, session);
+  }
+
+  private async handleError(
+    session: any,
+    controller: ChatbotController,
+    telefone: string,
+    result: any,
+  ): Promise<void> {
+    session.etapa = 'erro';
+    session.error = result.error;
+    session.errorMessage = result.message;
+
+    await this.messageFormatter.sendSystemUnavailableMessage(telefone);
     controller.updateSession(telefone, session);
   }
 

@@ -14,6 +14,7 @@ interface Context {
   horarioEscolhido?: string;
   duracao?: string;
   valor?: string;
+  erroDetalhado?: any;
 }
 
 @Injectable()

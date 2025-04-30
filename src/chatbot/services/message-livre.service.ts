@@ -11,17 +11,15 @@ export class MensagemLivreService {
 
   async handleFreeFormMessage(
     telefone: string,
-    mensagem: string, // Primeiro parâmetro é a mensagem do usuário
-    nome?: string, // Segundo parâmetro é o nome do cliente
+    mensagem: string,
+    nome?: string,
   ): Promise<void> {
     try {
       console.log('MensagemLivreService - mensagem:', mensagem, 'nome:', nome);
-
-      // Chamar diretamente o gptService sem passar pelo formatador
       const response = await this.gptService.generateResponse(
-        mensagem, // A mensagem do usuário como primeiro parâmetro
-        nome, // O nome como segundo parâmetro
-        telefone, // O telefone como terceiro parâmetro
+        mensagem,
+        nome,
+        telefone,
       );
       await this.twilioService.sendMessage(telefone, response);
     } catch (error) {

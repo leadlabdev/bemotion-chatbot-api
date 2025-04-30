@@ -30,32 +30,67 @@ export class AgendamentoService {
       valor,
       observacoes,
     );
-    // Criar o agendamento no Trinks (lógica original mantida)
-    const agendamentoTrinks = await this.trinksService.createAgendamento(
-      clienteId,
-      servicoId,
-      profissionalId,
-      dataHoraInicio,
-      duracaoEmMinutos,
-      valor,
-      observacoes,
-    );
 
-    // Após sucesso no Trinks, salvar no MongoDB
-    const novoAgendamento = new this.agendamentoModel({
-      clienteId: clienteId.toString(),
-      servicoId: servicoId.toString(),
-      profissionalId: profissionalId.toString(),
-      dataHoraInicio,
-      duracao: duracaoEmMinutos,
-      valor,
-      origem: observacoes,
-      status: 'CONFIRMADO',
-    });
+    try {
+      // Criar o agendamento no Trinks
+      const agendamentoTrinks = await this.trinksService.createAgendamento(
+        clienteId,
+        servicoId,
+        profissionalId,
+        dataHoraInicio,
+        duracaoEmMinutos,
+        valor,
+        observacoes,
+      );
 
-    await novoAgendamento.save();
+      // Salvar no MongoDB
+      const novoAgendamento = new this.agendamentoModel({
+        clienteId: clienteId.toString(),
+        servicoId: servicoId.toString(),
+        profissionalId: profissionalId.toString(),
+        dataHoraInicio,
+        duracao: duracaoEmMinutos,
+        valor,
+        origem: observacoes,
+        status: 'CONFIRMADO',
+      });
 
-    // Retornar o resultado do Trinks, mantendo a lógica original
-    return agendamentoTrinks;
+      await novoAgendamento.save();
+
+      return agendamentoTrinks;
+    } catch (error) {
+      // Logar detalhes relevantes do erro
+      console.error('Erro ao criar agendamento:', {
+        message: error.message,
+        status: error.response?.status,
+        data: error.response?.data,
+        config: {
+          url: error.config?.url,
+          method: error.config?.method,
+          headers: error.config?.headers,
+          data: error.config?.data,
+        },
+      });
+
+      // Logar erros específicos da API Trinks
+      if (
+        error.response?.data?.Errors &&
+        Array.isArray(error.response.data.Errors)
+      ) {
+        console.error('Erros da API Trinks:');
+        error.response.data.Errors.forEach(
+          (err: { PropertyName: string; ErrorMessage: string }) => {
+            console.error(
+              `PropertyName: ${err.PropertyName}, ErrorMessage: ${err.ErrorMessage}`,
+            );
+          },
+        );
+      } else {
+        console.error('Nenhum erro específico da API Trinks encontrado.');
+      }
+
+      // Re-lançar o erro para o chamador
+      throw error;
+    }
   }
 }

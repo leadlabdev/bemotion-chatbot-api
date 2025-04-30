@@ -21,17 +21,28 @@ export class ConfirmarAgendamentoState implements ChatbotState {
 
     if (resposta === 'confirmar') {
       try {
-        // Combine data e hora no formato esperado pela API (ex: YYYY-MM-DDTHH:MM:SS)
+        // Combine data e hora no formato esperado pela API
         const dataHoraInicio = this.formatarDataHora(
           session.dataSelecionada,
           session.horarioEscolhido,
         );
 
-        // Chamando o serviço para criar o agendamento com o datetime correto
+        // Logar parâmetros para depuração
+        console.log('Tentando criar agendamento com:', {
+          clienteId: session.clienteId,
+          servicoId: session.servicoSelecionado.id,
+          profissionalId: session.profissionalSelecionado.id,
+          dataHoraInicio,
+          duracaoEmMinutos: session.servicoSelecionado.duracaoEmMinutos,
+          valor: session.servicoSelecionado.preco,
+          observacoes: 'Agendamento via lead',
+        });
+
+        // Criar o agendamento com parâmetros corrigidos
         await this.agendamentoService.criarAgendamento(
-          session.servicoSelecionado.id,
-          session.clienteId,
-          session.profissionalSelecionado.id,
+          session.clienteId, // Corrigido: 71378567
+          session.servicoSelecionado.id, // Corrigido: 13038108
+          session.profissionalSelecionado.id, // 702154
           dataHoraInicio,
           session.servicoSelecionado.duracaoEmMinutos,
           session.servicoSelecionado.preco,
@@ -54,12 +65,38 @@ export class ConfirmarAgendamentoState implements ChatbotState {
           },
         );
       } catch (error) {
-        console.error('Erro ao criar agendamento:', error);
+        // Logar detalhes do erro
+        console.error('Erro ao confirmar agendamento:', {
+          message: error.message,
+          status: error.response?.status,
+          data: error.response?.data,
+        });
+
+        // Extrair erros específicos da API Trinks
+        let erroDetalhado =
+          'Ocorreu um erro ao tentar confirmar o agendamento.';
+        if (
+          error.response?.data?.Errors &&
+          Array.isArray(error.response.data.Errors)
+        ) {
+          const erros = error.response.data.Errors.map(
+            (err: { PropertyName: string; ErrorMessage: string }) =>
+              `Erro em ${err.PropertyName || 'geral'}: ${err.ErrorMessage}`,
+          ).join('; ');
+          erroDetalhado = `Erro ao confirmar: ${erros}`;
+          console.error('Erros da API Trinks:', erros);
+        } else {
+          console.error('Nenhum erro específico da API Trinks encontrado.');
+        }
+
         session.etapa = 'erro';
         await this.messageFormatter.formatAndSend(
           telefone,
           'confirmar_agendamento_erro',
-          { nome: session.nome },
+          {
+            nome: session.nome,
+            erroDetalhado,
+          },
         );
       }
     } else if (resposta === 'cancelar') {
@@ -78,7 +115,6 @@ export class ConfirmarAgendamentoState implements ChatbotState {
           escolhaInvalida: userMessage,
         },
       );
-      // Permanece no estado 'confirmar_agendamento' esperando uma resposta válida
     }
 
     controller.updateSession(telefone, session);
@@ -103,11 +139,8 @@ export class ConfirmarAgendamentoState implements ChatbotState {
   }
 
   private formatarDataHora(data: string, hora: string): string {
-    // Assumindo que data está no formato DD/MM/AAAA e hora no formato HH:MM
     const [dia, mes, ano] = data.split('/');
     const [horas, minutos] = hora.split(':');
-
-    // Formato esperado pela API (pode variar, ajuste conforme a documentação)
-    return `${ano}-${mes}-${dia}T${horas}:${minutos}:00`; // Exemplo: 2025-05-15T09:00:00
+    return `${ano}-${mes}-${dia}T${horas}:${minutos}:00`;
   }
 }
