@@ -85,11 +85,15 @@ export class SelecionarServicoState implements ChatbotState {
 
     // Selecionar o serviço
     const servicoSelecionado = session.servicos[escolha];
+    console.log(
+      `Serviço selecionado: ${servicoSelecionado.nome} (ID: ${servicoSelecionado.id})`,
+    );
 
-    // Buscar profissionais
+    // Buscar profissionais e filtrar por serviço
     try {
       const profissionais = await this.trinksService.listarProfissionais();
       if (!profissionais || profissionais.length === 0) {
+        console.warn('Nenhum profissional retornado pela API.');
         await this.messageFormatter.formatAndSend(
           telefone,
           'sem_profissionais_disponiveis',
@@ -101,19 +105,66 @@ export class SelecionarServicoState implements ChatbotState {
         return;
       }
 
-      const listaFormatada = profissionais
+      // Filtrar profissionais que oferecem o serviço selecionado
+      const profissionaisFiltrados: any[] = [];
+      for (const profissional of profissionais) {
+        try {
+          const servicosProfissional =
+            await this.trinksService.listarServicosDoProfissional(
+              profissional.id,
+            );
+          const possuiServico = servicosProfissional.some(
+            (servico) => servico.id === servicoSelecionado.id,
+          );
+          if (possuiServico) {
+            profissionaisFiltrados.push(profissional);
+            console.log(
+              `Profissional ${profissional.apelido || profissional.nome} (ID: ${profissional.id}) oferece o serviço.`,
+            );
+          }
+        } catch (error) {
+          console.warn(
+            `Falha ao verificar serviços para profissional ${profissional.id} (${
+              profissional.apelido || profissional.nome
+            }):`,
+            error,
+          );
+          // Continue to the next professional
+        }
+      }
+
+      if (profissionaisFiltrados.length === 0) {
+        console.warn(
+          `Nenhum profissional encontrado para o serviço ${servicoSelecionado.nome} (ID: ${servicoSelecionado.id}).`,
+        );
+        await this.messageFormatter.formatAndSend(
+          telefone,
+          'sem_profissionais_disponiveis',
+          {
+            nome: session.nome,
+            servicoEscolhido: servicoSelecionado.nome,
+          },
+        );
+        return;
+      }
+
+      const listaFormatada = profissionaisFiltrados
         .map((p, index) => `${index + 1}. ${p.apelido || p.nome}`)
         .join('\n');
+      console.log(
+        'Profissionais filtrados enviados ao usuário:',
+        listaFormatada,
+      );
 
       // Atualizar sessão
       controller.updateSession(telefone, {
         ...session,
         etapa: 'selecionar_profissional',
         servicoSelecionado,
-        profissionais,
+        profissionais: profissionaisFiltrados,
       });
 
-      // Enviar lista de profissionais
+      // Enviar lista de profissionais filtrados
       await this.messageFormatter.formatAndSend(
         telefone,
         'selecionar_profissional',
@@ -124,7 +175,7 @@ export class SelecionarServicoState implements ChatbotState {
         },
       );
     } catch (error) {
-      console.error('Erro ao listar profissionais:', error);
+      console.error('Erro ao listar profissionais ou serviços:', error);
       await this.messageFormatter.sendSystemUnavailableMessage(telefone);
       return;
     }

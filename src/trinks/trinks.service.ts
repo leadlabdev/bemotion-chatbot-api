@@ -70,6 +70,40 @@ export class TrinksService {
       throw new Error('Erro ao buscar profissionais.');
     }
   }
+
+  async listarServicosDoProfissional(profissionalId: number): Promise<any[]> {
+    try {
+      const url = `https://api.trinks.com/v1/profissionais/${profissionalId}/servicos`;
+      console.log(`Chamando API: ${url} para profissional ${profissionalId}`);
+      const response = await firstValueFrom(
+        this.httpService.get(url, {
+          headers: {
+            'X-Api-Key': this.apiKey,
+            accept: 'application/json',
+            estabelecimentoId: this.estabelecimentoId,
+          },
+        }),
+      );
+
+      console.log(
+        `Resposta da API Trinks (Serviços do Profissional ${profissionalId}):`,
+        response.data,
+      );
+      return Array.isArray(response.data.data) ? response.data.data : [];
+    } catch (error) {
+      if (error.response && error.response.status === 404) {
+        console.warn(
+          `Nenhum serviço encontrado para o profissional ${profissionalId}`,
+        );
+        return [];
+      }
+      console.error(
+        `Erro ao buscar serviços do profissional ${profissionalId}:`,
+        error.response?.data || error.message,
+      );
+      return []; // Return empty array for other errors to keep the loop running
+    }
+  }
   async listarProfissionaisComAgenda(
     date: string,
     profissionalId?: number,
