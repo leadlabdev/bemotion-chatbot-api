@@ -14,7 +14,8 @@ export class SolicitarNomeState implements ChatbotState {
   ): Promise<void> {
     const session = controller.getSession(telefone);
 
-    if (!session.nome) {
+    // Handle the initial name collection
+    if (session.subEtapa === 'solicitar_nome') {
       const mensagemNormalizada = userMessage
         .trim()
         .toLowerCase()
@@ -26,13 +27,7 @@ export class SolicitarNomeState implements ChatbotState {
 
       const primeiroNome = mensagemNormalizada.split(/\s+/)[0];
 
-      if (
-        !primeiroNome ||
-        primeiroNome.length < 2 ||
-        ['meu', 'nome', 'é', 'sou', 'me', 'chamo'].includes(
-          primeiroNome.toLowerCase(),
-        )
-      ) {
+      if (!this.validateName(primeiroNome)) {
         await this.messageFormatter.formatAndSend(
           telefone,
           'nome_invalido',
@@ -41,29 +36,66 @@ export class SolicitarNomeState implements ChatbotState {
         return;
       }
 
-      session.nome =
+      session.nomeTentativo =
         primeiroNome.charAt(0).toUpperCase() + primeiroNome.slice(1);
-      session.subEtapa = 'aguardando_sobrenome';
+      session.subEtapa = 'confirmar_nome';
 
-      await this.messageFormatter.formatAndSend(
-        telefone,
-        'solicitar_sobrenome',
-        {
-          nome: session.nome,
-        },
-      );
+      await this.messageFormatter.formatAndSend(telefone, 'confirmar_nome', {
+        nome: session.nomeTentativo,
+      });
 
       controller.updateSession(telefone, session);
       return;
     }
 
+    // Handle name confirmation
+    if (session.subEtapa === 'confirmar_nome') {
+      const resposta = userMessage.toLowerCase().trim();
+
+      if (resposta === 'confirmar') {
+        session.nome = session.nomeTentativo;
+        session.subEtapa = 'aguardando_sobrenome';
+        delete session.nomeTentativo;
+
+        await this.messageFormatter.formatAndSend(
+          telefone,
+          'solicitar_sobrenome',
+          {
+            nome: session.nome,
+          },
+        );
+      } else if (resposta === 'corrigir') {
+        session.subEtapa = 'solicitar_nome';
+        delete session.nomeTentativo;
+
+        await this.messageFormatter.formatAndSend(
+          telefone,
+          'solicitar_nome',
+          {},
+        );
+      } else {
+        await this.messageFormatter.formatAndSend(
+          telefone,
+          'confirmacao_nome_invalida',
+          {
+            nome: session.nomeTentativo,
+          },
+        );
+      }
+
+      controller.updateSession(telefone, session);
+      return;
+    }
+
+    // Handle surname collection
     if (session.subEtapa === 'aguardando_sobrenome') {
       const sobrenome = userMessage
         .trim()
+        .toLowerCase()
         .replace(/meu sobrenome é|sobrenome|é/gi, '')
         .trim();
 
-      if (sobrenome.length < 2 || sobrenome.includes(' ')) {
+      if (!this.validateName(sobrenome)) {
         await this.messageFormatter.formatAndSend(
           telefone,
           'sobrenome_invalido',
@@ -83,6 +115,12 @@ export class SolicitarNomeState implements ChatbotState {
       });
 
       controller.updateSession(telefone, session);
+      return;
     }
+  }
+
+  private validateName(name: string): boolean {
+    const nameRegex = /^[A-Za-zÀ-ÿ]{2,}$/;
+    return nameRegex.test(name);
   }
 }

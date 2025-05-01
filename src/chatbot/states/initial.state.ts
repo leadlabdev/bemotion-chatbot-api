@@ -31,7 +31,7 @@ export class InitialState implements ChatbotState {
     const clientes = result.clientes;
 
     if (clientes?.length === 0) {
-      await this.handleNewClient(session, controller, telefone, userMessage);
+      await this.handleNewClient(session, controller, telefone);
     } else if (clientes?.length > 0) {
       await this.handleExistingClient(
         session,
@@ -51,17 +51,11 @@ export class InitialState implements ChatbotState {
     session: any,
     controller: ChatbotController,
     telefone: string,
-    userMessage: string,
   ): Promise<void> {
     session.etapa = 'iniciar_cadastro_cliente';
+    session.subEtapa = 'aguardando_inicio_cadastro';
 
-    await this.messageFormatter.formatAndSend(
-      telefone,
-      'iniciar_cadastro_cliente',
-      {
-        mensagem: userMessage,
-      },
-    );
+    await this.messageFormatter.formatAndSend(telefone, 'default', {});
     controller.updateSession(telefone, session);
   }
 

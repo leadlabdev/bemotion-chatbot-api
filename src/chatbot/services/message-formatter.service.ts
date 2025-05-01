@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { iniciarAgendamentoPrompts } from 'src/prompts/iniciar-agendamento';
+import { iniciarCadastroCliente } from 'src/prompts/iniciar-cadastro-cliente';
 import { TwilioService } from 'src/twilio/twilio.service';
 
 interface Context {
@@ -21,11 +22,12 @@ interface Context {
 export class MessageFormatterService {
   private mensagens = {
     ...iniciarAgendamentoPrompts,
+    ...iniciarCadastroCliente,
     menu_principal: (nome: string) => ({
       mensagem: `Olá, ${nome}, tudo bem? Me chamo Mari, muito prazer! Seja bem-vinda ao Mega Studio Normandia! 😊 Qual procedimento você está precisando no momento?`,
     }),
     default: (nome: string) => ({
-      mensagem: `Desculpe, ${nome}, não entendi. Vamos tentar novamente?`,
+      mensagem: `Olá, tudo bem? Me chamo Mari, muito prazer! Seja bem-vinda ao Mega Studio Normandia! 😊 para iniciar o atendimento, precisamos realizar um breve cadastro !`,
     }),
   };
 
