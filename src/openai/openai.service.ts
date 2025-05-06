@@ -15,7 +15,7 @@ export class GptService {
   }
 
   async generateResponse(
-    prompt: string,
+    telefone: string,
     messageContext: any = {},
     userId: string,
   ): Promise<string> {
@@ -28,17 +28,8 @@ export class GptService {
         this.threadCache.set(userId, threadId);
       }
 
-      // Enviar apenas a mensagem atual ou informação contextual essencial
-      let messageContent = messageContext.mensagem || prompt;
+      let messageContent = messageContext.mensagem;
 
-      // Adicionar contexto essencial apenas na primeira mensagem ou quando há mudança de contexto
-      if (messageContext.isFirstMessage || messageContext.contextChanged) {
-        if (messageContext.nome) {
-          messageContent = `Nome do cliente: ${messageContext.nome}\n\n${messageContent}`;
-        }
-      }
-
-      // Enviar mensagem para o thread
       await this.openai.beta.threads.messages.create(threadId, {
         role: 'user',
         content: messageContent,

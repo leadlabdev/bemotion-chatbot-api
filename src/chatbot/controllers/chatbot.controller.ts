@@ -1,12 +1,14 @@
 import { Controller, Post, Body } from '@nestjs/common';
 import { SessionService } from '../services/session.service';
-import { StateFactory } from '../states/state.factory';
+import { TrinksService } from 'src/trinks/trinks.service';
+import { FreeMessageProcessorService } from '../services/free-message-processor.service';
 
 @Controller('chatbot')
 export class ChatbotController {
   constructor(
     private readonly sessionService: SessionService,
-    private readonly stateFactory: StateFactory,
+    private readonly handleFreeMessage: FreeMessageProcessorService,
+    private readonly trinksService: TrinksService,
   ) {}
 
   getSession(telefone: string): any {
@@ -26,9 +28,16 @@ export class ChatbotController {
       .trim();
 
     const session = this.getSession(telefoneFormatado);
-    const currentState = session.etapa || 'inicial';
-    const stateHandler = this.stateFactory.getState(currentState);
-    await stateHandler.handle(this, telefoneFormatado, userMessage);
+    const result =
+      await this.trinksService.identificarClientePorTelefone(telefoneFormatado);
+
+    if (!result.success) {
+      return 'error';
+    }
+
+    const clientes = result.clientes;
+
+    await this.handleFreeMessage.processMessage(telefoneFormatado, userMessage);
     return { success: true };
   }
 }

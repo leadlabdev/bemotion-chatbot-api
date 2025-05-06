@@ -4,10 +4,6 @@ import { GptService } from 'src/openai/openai.service';
 import { TrinksService } from 'src/trinks/trinks.service';
 import { TwilioService } from 'src/twilio/twilio.service';
 import { SessionService } from './services/session.service';
-import { MessageFormatterService } from './services/message-formatter.service';
-import { InitialState } from './states/initial.state';
-import { ErrorState } from './states/error.state';
-import { StateFactory } from './states/state.factory';
 import { ChatbotController } from './controllers/chatbot.controller';
 import { HttpModule } from '@nestjs/axios';
 import { ConfigModule } from '@nestjs/config';
@@ -16,21 +12,7 @@ import {
   Agendamento,
   AgendamentoSchema,
 } from 'src/agendamentos/agendamentos.schema';
-import {
-  IniciarCadastroCliente,
-  SolicitarNomeState,
-  SolicitarSexoState,
-} from './states/iniciar-cadastro-cliente';
-import { MenuPrincipalState } from './states/menu-principal.state';
-import {
-  ConfirmarAgendamentoState,
-  IniciarAgendamento,
-  SelecionarDataState,
-  SelecionarHoraState,
-  SelecionarProfissionalState,
-  SelecionarServicoState,
-} from './states/iniciar-agendamento';
-import { MensagemLivreService } from './services/message-livre.service';
+import { FreeMessageProcessorService } from './services/free-message-processor.service';
 
 @Module({
   imports: [
@@ -46,21 +28,7 @@ import { MensagemLivreService } from './services/message-livre.service';
     TrinksService,
     AgendamentoService,
     SessionService,
-    MessageFormatterService,
-    MensagemLivreService,
-    InitialState,
-    IniciarCadastroCliente,
-    IniciarAgendamento,
-    SolicitarNomeState,
-    SolicitarSexoState,
-    MenuPrincipalState,
-    SelecionarServicoState,
-    SelecionarProfissionalState,
-    SelecionarDataState,
-    SelecionarHoraState,
-    ConfirmarAgendamentoState,
-    ErrorState,
-    StateFactory,
+    FreeMessageProcessorService,
   ],
   controllers: [ChatbotController],
 })
