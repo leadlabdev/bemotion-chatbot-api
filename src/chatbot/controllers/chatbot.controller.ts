@@ -1,6 +1,5 @@
 import { Controller, Post, Body } from '@nestjs/common';
 import { SessionService } from '../services/session.service';
-import { TrinksService } from 'src/trinks/trinks.service';
 import { FreeMessageProcessorService } from '../services/free-message-processor.service';
 
 @Controller('chatbot')
@@ -8,7 +7,6 @@ export class ChatbotController {
   constructor(
     private readonly sessionService: SessionService,
     private readonly handleFreeMessage: FreeMessageProcessorService,
-    private readonly trinksService: TrinksService,
   ) {}
 
   getSession(telefone: string): any {
@@ -18,24 +16,30 @@ export class ChatbotController {
   updateSession(telefone: string, session: any): void {
     this.sessionService.updateSession(telefone, session);
   }
-
   @Post('webhook')
   async handleIncomingMessage(@Body() body) {
     const { From, Body: userMessage } = body;
+
+    if (!From || !userMessage) {
+      console.error('Missing From or Body in webhook payload:', body);
+      return { success: false, error: 'Invalid payload' };
+    }
 
     const telefoneFormatado = From.replace('whatsapp:', '')
       .replace('+55', '')
       .trim();
 
-    const session = this.getSession(telefoneFormatado);
-    const result =
-      await this.trinksService.identificarClientePorTelefone(telefoneFormatado);
-
-    if (!result.success) {
-      return 'error';
+    if (!/^\d+$/.test(telefoneFormatado)) {
+      console.error('Invalid phone number format:', telefoneFormatado);
+      return { success: false, error: 'Invalid phone number' };
     }
 
-    const clientes = result.clientes;
+    const session = this.getSession(telefoneFormatado);
+    // Update session with phone number
+    this.updateSession(telefoneFormatado, {
+      ...session,
+      telefone: telefoneFormatado,
+    });
 
     await this.handleFreeMessage.processMessage(telefoneFormatado, userMessage);
     return { success: true };
