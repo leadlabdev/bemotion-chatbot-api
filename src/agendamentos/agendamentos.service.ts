@@ -33,7 +33,7 @@ export class AgendamentoService {
 
     try {
       // Criar o agendamento no Trinks
-      const agendamentoTrinks = await this.trinksService.createAgendamento(
+      const agendamentoTrinks = await this.trinksService.createAppoitment(
         clienteId,
         servicoId,
         profissionalId,

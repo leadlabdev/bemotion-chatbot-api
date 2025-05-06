@@ -1,24 +1,22 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import OpenAI from 'openai';
-import { HttpService } from '@nestjs/axios';
-import { firstValueFrom } from 'rxjs';
+import { TrinksService } from '../trinks/trinks.service';
 
 @Injectable()
 export class GptService {
   private openai: OpenAI;
-  private assistantId: string = 'asst_wfI9H5irkU3QLxF2zfRz2gAh';
+  private assistantId: any;
   private threadCache: Map<string, string> = new Map();
-  private trinksApiKey: string = 'kdy1HCm2Is6Oj4EYeNupN2la9k2dYqot7vorGi89';
-  private trinksBaseUrl: string = 'https://api.trinks.com/v1';
 
   constructor(
     private configService: ConfigService,
-    private httpService: HttpService,
+    private trinksService: TrinksService,
   ) {
     this.openai = new OpenAI({
       apiKey: this.configService.get<string>('OPENAI_API_KEY'),
     });
+    this.assistantId = this.configService.get<string>('OPENAI_ASSISTANT_ID');
   }
 
   async generateResponse(
@@ -44,10 +42,10 @@ export class GptService {
       console.log(`[GptService] Telefone extraído da sessão: ${phone}`);
       if (phone) {
         console.log(
-          `[GptService] Chamando checkClientByPhone para telefone: ${phone}`,
+          `[GptService] Chamando TrinksService.checkClientByPhone para telefone: ${phone}`,
         );
-        const clientData = await this.checkClientByPhone(phone, 54027);
-        console.log(`[GptService] Resposta de checkClientByPhone:`, clientData);
+        const clientData = await this.trinksService.checkClientByPhone(phone);
+        console.log(`[GptService] Resposta de TrinksService:`, clientData);
         if (clientData?.data?.length > 0 && clientData.data[0]?.nome) {
           clientName = clientData.data[0].nome.split(' ')[0]; // Usar apenas o primeiro nome
           console.log(`[GptService] Nome do cliente extraído: ${clientName}`);
@@ -130,19 +128,6 @@ export class GptService {
     }
   }
 
-  // Helper method to fetch client name in case of error
-  private async getClientNameFallback(phone: string): Promise<string> {
-    try {
-      const clientData = await this.checkClientByPhone(phone, 54027);
-      if (clientData?.data?.length > 0 && clientData.data[0]?.nome) {
-        return clientData.data[0].nome.split(' ')[0];
-      }
-    } catch (error) {
-      console.error('[GptService] Erro no fallback de nome:', error);
-    }
-    return 'Cliente';
-  }
-
   private async handleRun(threadId: string, runId: string) {
     let run = await this.openai.beta.threads.runs.retrieve(threadId, runId);
     const pendingStatuses = ['queued', 'in_progress', 'requires_action'];
@@ -156,9 +141,8 @@ export class GptService {
         for (const toolCall of toolCalls) {
           if (toolCall.function.name === 'checkClientByPhone') {
             const args = JSON.parse(toolCall.function.arguments);
-            const result = await this.checkClientByPhone(
+            const result = await this.trinksService.checkClientByPhone(
               args.phone,
-              args.estabelecimentoId,
             );
 
             // Submeter a saída da função
@@ -186,35 +170,15 @@ export class GptService {
     return run;
   }
 
-  private async checkClientByPhone(phone: string, estabelecimentoId: number) {
+  private async getClientNameFallback(phone: string): Promise<string> {
     try {
-      console.log(
-        `[GptService] Consultando cliente: telefone=${phone}, estabelecimentoId=${estabelecimentoId}`,
-      );
-      const response = await firstValueFrom(
-        this.httpService.get(`${this.trinksBaseUrl}/clientes`, {
-          headers: {
-            'X-Api-Key': this.trinksApiKey,
-            accept: 'application/json',
-            estabelecimentoId: estabelecimentoId.toString(),
-          },
-          params: {
-            telefone: phone,
-            incluirDetalhes: false,
-          },
-        }),
-      );
-      console.log(
-        `[GptService] Resposta da API Trinks:`,
-        JSON.stringify(response.data),
-      );
-      return response.data;
+      const clientData = await this.trinksService.checkClientByPhone(phone);
+      if (clientData?.data?.length > 0 && clientData.data[0]?.nome) {
+        return clientData.data[0].nome.split(' ')[0];
+      }
     } catch (error) {
-      console.error(
-        `[GptService] Erro ao consultar cliente: ${error.message}`,
-        error.response?.data,
-      );
-      return { data: [] };
+      console.error('[GptService] Erro no fallback de nome:', error);
     }
+    return 'Cliente';
   }
 }
