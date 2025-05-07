@@ -1,6 +1,4 @@
 import { Module } from '@nestjs/common';
-
-import { GptService } from 'src/openai/openai.service';
 import { TrinksService } from 'src/trinks/trinks.service';
 import { TwilioService } from 'src/twilio/twilio.service';
 import { SessionService } from './services/session.service';
@@ -13,6 +11,7 @@ import {
   AgendamentoSchema,
 } from 'src/agendamentos/agendamentos.schema';
 import { FreeMessageProcessorService } from './services/free-message-processor.service';
+import { GptService } from 'src/openai/openai.service';
 
 @Module({
   imports: [

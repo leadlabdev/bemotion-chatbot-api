@@ -17,6 +17,9 @@ export class GptService {
       apiKey: this.configService.get<string>('OPENAI_API_KEY'),
     });
     this.assistantId = this.configService.get<string>('OPENAI_ASSISTANT_ID');
+    if (!this.assistantId) {
+      throw new Error('OPENAI_ASSISTANT_ID is not defined in environment');
+    }
   }
 
   async generateResponse(
@@ -36,28 +39,6 @@ export class GptService {
         return 'Desculpe, não entendi sua mensagem. 😊 Pode mandar novamente?';
       }
 
-      // Consultar o cliente pelo telefone da sessão
-      let clientName = 'Cliente';
-      const phone = session?.telefone;
-      console.log(`[GptService] Telefone extraído da sessão: ${phone}`);
-      if (phone) {
-        console.log(
-          `[GptService] Chamando TrinksService.checkClientByPhone para telefone: ${phone}`,
-        );
-        const clientData = await this.trinksService.checkClientByPhone(phone);
-        console.log(`[GptService] Resposta de TrinksService:`, clientData);
-        if (clientData?.data?.length > 0 && clientData.data[0]?.nome) {
-          clientName = clientData.data[0].nome.split(' ')[0]; // Usar apenas o primeiro nome
-          console.log(`[GptService] Nome do cliente extraído: ${clientName}`);
-        } else {
-          console.log(
-            `[GptService] Nenhum cliente encontrado para telefone: ${phone}`,
-          );
-        }
-      } else {
-        console.log(`[GptService] Nenhum telefone fornecido na sessão`);
-      }
-
       // Gerenciar thread para o usuário
       let threadId = this.threadCache.get(userId);
       if (!threadId) {
@@ -68,7 +49,8 @@ export class GptService {
       }
 
       // Enviar mensagem com contexto
-      const enhancedMessage = `[Contexto: Nome do cliente: ${clientName}, Telefone: ${phone || 'desconhecido'}]\n${message}`;
+      const phone = session?.telefone;
+      const enhancedMessage = `[Contexto: Nome do cliente: Cliente, Telefone: ${phone || 'desconhecido'}]\n${message}`;
       console.log(
         `[GptService] Mensagem enviada ao assistente: ${enhancedMessage}`,
       );
@@ -105,12 +87,20 @@ export class GptService {
 
       if (assistantMessages.length === 0) {
         console.log(`[GptService] Nenhuma mensagem do assistente encontrada`);
+        // Fallback to greeting with manual client lookup
+        const clientName = phone
+          ? await this.getClientNameFallback(phone)
+          : 'Cliente';
         return `Olá ${clientName}, tudo bem? Me chamo Mari, muito prazer! Seja bem-vinda ao Mega Studio Normandia! 😊 Qual procedimento você está precisando no momento?`;
       }
 
       const responseContent = assistantMessages[0].content[0];
       if (!responseContent || responseContent.type !== 'text') {
         console.log(`[GptService] Resposta do assistente não contém texto`);
+        // Fallback to greeting with manual client lookup
+        const clientName = phone
+          ? await this.getClientNameFallback(phone)
+          : 'Cliente';
         return `Olá ${clientName}, tudo bem? Me chamo Mari, muito prazer! Seja bem-vinda ao Mega Studio Normandia! 😊 Qual procedimento você está precisando no momento?`;
       }
 
@@ -120,7 +110,7 @@ export class GptService {
       return responseContent.text.value;
     } catch (error) {
       console.error('[GptService] Erro ao gerar resposta:', error);
-      // Fallback to greeting if an error occurs
+      // Fallback to greeting with manual client lookup
       const clientName = session?.telefone
         ? await this.getClientNameFallback(session.telefone)
         : 'Cliente';
@@ -135,30 +125,83 @@ export class GptService {
     const maxAttempts = 30;
 
     while (pendingStatuses.includes(run.status) && attempts < maxAttempts) {
+      console.log(
+        `[GptService] Status do run: ${run.status}, tentativa: ${attempts + 1}`,
+      );
       if (run.status === 'requires_action' && run.required_action) {
         const toolCalls = run.required_action.submit_tool_outputs.tool_calls;
+        console.log(
+          `[GptService] Tool calls recebidos:`,
+          JSON.stringify(toolCalls),
+        );
+
+        if (toolCalls.length === 0) {
+          console.warn(
+            `[GptService] Nenhum tool call recebido, continuando...`,
+          );
+        }
+
+        const toolOutputs: Array<{
+          tool_call_id: string;
+          output: string;
+        }> = [];
 
         for (const toolCall of toolCalls) {
           if (toolCall.function.name === 'checkClientByPhone') {
-            const args = JSON.parse(toolCall.function.arguments);
-            const result = await this.trinksService.checkClientByPhone(
-              args.phone,
-            );
+            try {
+              const args = JSON.parse(toolCall.function.arguments);
+              console.log(
+                `[GptService] Assistente solicitou checkClientByPhone para telefone: ${args.phone}`,
+              );
+              const result = await this.trinksService.checkClientByPhone(
+                args.phone,
+              );
+              console.log(
+                `[GptService] Resultado de checkClientByPhone:`,
+                JSON.stringify(result),
+              );
 
-            // Submeter a saída da função
-            await this.openai.beta.threads.runs.submitToolOutputs(
-              threadId,
-              runId,
-              {
-                tool_outputs: [
-                  {
-                    tool_call_id: toolCall.id,
-                    output: JSON.stringify(result),
-                  },
-                ],
-              },
+              toolOutputs.push({
+                tool_call_id: toolCall.id,
+                output: JSON.stringify(result),
+              });
+            } catch (error) {
+              console.error(
+                `[GptService] Erro ao executar checkClientByPhone:`,
+                error,
+              );
+              toolOutputs.push({
+                tool_call_id: toolCall.id,
+                output: JSON.stringify({ data: [] }),
+              });
+            }
+          } else {
+            console.warn(
+              `[GptService] Função desconhecida solicitada: ${toolCall.function.name}`,
             );
+            toolOutputs.push({
+              tool_call_id: toolCall.id,
+              output: JSON.stringify({ error: 'Unknown function' }),
+            });
           }
+        }
+
+        if (toolOutputs.length > 0) {
+          console.log(
+            `[GptService] Submetendo tool outputs:`,
+            JSON.stringify(toolOutputs),
+          );
+          await this.openai.beta.threads.runs.submitToolOutputs(
+            threadId,
+            runId,
+            {
+              tool_outputs: toolOutputs,
+            },
+          );
+        } else {
+          console.warn(
+            `[GptService] Nenhum tool output para submeter, continuando...`,
+          );
         }
       }
 
@@ -167,6 +210,13 @@ export class GptService {
       attempts++;
     }
 
+    if (attempts >= maxAttempts) {
+      console.error(
+        `[GptService] Máximo de tentativas atingido: status=${run.status}`,
+      );
+    }
+
+    console.log(`[GptService] Run concluído com status: ${run.status}`);
     return run;
   }
 
