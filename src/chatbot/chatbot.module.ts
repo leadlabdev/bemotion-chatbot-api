@@ -12,6 +12,7 @@ import {
 } from 'src/agendamentos/agendamentos.schema';
 import { FreeMessageProcessorService } from './services/free-message-processor.service';
 import { GptService } from 'src/openai/openai.service';
+import { TrinksApiService } from 'src/trinks/trinks.api.service';
 
 @Module({
   imports: [
@@ -25,7 +26,7 @@ import { GptService } from 'src/openai/openai.service';
     TwilioService,
     GptService,
     TrinksService,
-
+    TrinksApiService,
     SessionService,
     FreeMessageProcessorService,
   ],

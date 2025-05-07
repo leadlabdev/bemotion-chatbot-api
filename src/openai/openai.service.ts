@@ -39,18 +39,12 @@ export class GptService {
         return 'Desculpe, não entendi sua mensagem. 😊 Pode mandar novamente?';
       }
 
-      // Gerenciar thread para o usuário
-      let threadId = this.threadCache.get(userId);
-      if (!threadId) {
-        const thread = await this.openai.beta.threads.create();
-        threadId = thread.id;
-        this.threadCache.set(userId, threadId);
-        console.log(`[GptService] Nova thread criada: threadId=${threadId}`);
-      }
+      // Obter ou criar thread para o usuário
+      const threadId = await this.getOrCreateThread(userId);
 
-      // Enviar mensagem com contexto
+      const currentDate = new Date().toISOString().split('T')[0]; // Ex.: '2025-05-07'
       const phone = session?.telefone;
-      const enhancedMessage = `[Contexto: Nome do cliente: Cliente, Telefone: ${phone || 'desconhecido'}]\n${message}`;
+      const enhancedMessage = `[Contexto: Nome do cliente: Cliente, Telefone: ${phone || 'desconhecido'}, Data atual: ${currentDate}]\n${message}`;
       console.log(
         `[GptService] Mensagem enviada ao assistente: ${enhancedMessage}`,
       );
@@ -73,49 +67,26 @@ export class GptService {
         console.log(
           `[GptService] Run não concluído: status=${completedRun.status}`,
         );
-        return 'Desculpe, algo deu errado. 😊 Pode tentar novamente?';
+        return this.getDefaultGreeting(phone);
       }
 
       // Obter a resposta mais recente
-      const messages = await this.openai.beta.threads.messages.list(threadId);
-      const assistantMessages = messages.data
-        .filter((msg) => msg.role === 'assistant')
-        .sort(
-          (a, b) =>
-            new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
-        );
-
-      if (assistantMessages.length === 0) {
-        console.log(`[GptService] Nenhuma mensagem do assistente encontrada`);
-        // Fallback to greeting with manual client lookup
-        const clientName = phone
-          ? await this.getClientNameFallback(phone)
-          : 'Cliente';
-        return `Olá ${clientName}, tudo bem? Me chamo Mari, muito prazer! Seja bem-vinda ao Mega Studio Normandia! 😊 Qual procedimento você está precisando no momento?`;
-      }
-
-      const responseContent = assistantMessages[0].content[0];
-      if (!responseContent || responseContent.type !== 'text') {
-        console.log(`[GptService] Resposta do assistente não contém texto`);
-        // Fallback to greeting with manual client lookup
-        const clientName = phone
-          ? await this.getClientNameFallback(phone)
-          : 'Cliente';
-        return `Olá ${clientName}, tudo bem? Me chamo Mari, muito prazer! Seja bem-vinda ao Mega Studio Normandia! 😊 Qual procedimento você está precisando no momento?`;
-      }
-
-      console.log(
-        `[GptService] Resposta do assistente: ${responseContent.text.value}`,
-      );
-      return responseContent.text.value;
+      return await this.getLatestResponse(threadId, phone);
     } catch (error) {
       console.error('[GptService] Erro ao gerar resposta:', error);
-      // Fallback to greeting with manual client lookup
-      const clientName = session?.telefone
-        ? await this.getClientNameFallback(session.telefone)
-        : 'Cliente';
-      return `Olá ${clientName}, tudo bem? Me chamo Mari, muito prazer! Seja bem-vinda ao Mega Studio Normandia! 😊 Qual procedimento você está precisando no momento?`;
+      return this.getDefaultGreeting(session?.telefone);
     }
+  }
+
+  private async getOrCreateThread(userId: string): Promise<string> {
+    let threadId = this.threadCache.get(userId);
+    if (!threadId) {
+      const thread = await this.openai.beta.threads.create();
+      threadId = thread.id;
+      this.threadCache.set(userId, threadId);
+      console.log(`[GptService] Nova thread criada: threadId=${threadId}`);
+    }
+    return threadId;
   }
 
   private async handleRun(threadId: string, runId: string) {
@@ -128,81 +99,9 @@ export class GptService {
       console.log(
         `[GptService] Status do run: ${run.status}, tentativa: ${attempts + 1}`,
       );
+
       if (run.status === 'requires_action' && run.required_action) {
-        const toolCalls = run.required_action.submit_tool_outputs.tool_calls;
-        console.log(
-          `[GptService] Tool calls recebidos:`,
-          JSON.stringify(toolCalls),
-        );
-
-        if (toolCalls.length === 0) {
-          console.warn(
-            `[GptService] Nenhum tool call recebido, continuando...`,
-          );
-        }
-
-        const toolOutputs: Array<{
-          tool_call_id: string;
-          output: string;
-        }> = [];
-
-        for (const toolCall of toolCalls) {
-          if (toolCall.function.name === 'checkClientByPhone') {
-            try {
-              const args = JSON.parse(toolCall.function.arguments);
-              console.log(
-                `[GptService] Assistente solicitou checkClientByPhone para telefone: ${args.phone}`,
-              );
-              const result = await this.trinksService.checkClientByPhone(
-                args.phone,
-              );
-              console.log(
-                `[GptService] Resultado de checkClientByPhone:`,
-                JSON.stringify(result),
-              );
-
-              toolOutputs.push({
-                tool_call_id: toolCall.id,
-                output: JSON.stringify(result),
-              });
-            } catch (error) {
-              console.error(
-                `[GptService] Erro ao executar checkClientByPhone:`,
-                error,
-              );
-              toolOutputs.push({
-                tool_call_id: toolCall.id,
-                output: JSON.stringify({ data: [] }),
-              });
-            }
-          } else {
-            console.warn(
-              `[GptService] Função desconhecida solicitada: ${toolCall.function.name}`,
-            );
-            toolOutputs.push({
-              tool_call_id: toolCall.id,
-              output: JSON.stringify({ error: 'Unknown function' }),
-            });
-          }
-        }
-
-        if (toolOutputs.length > 0) {
-          console.log(
-            `[GptService] Submetendo tool outputs:`,
-            JSON.stringify(toolOutputs),
-          );
-          await this.openai.beta.threads.runs.submitToolOutputs(
-            threadId,
-            runId,
-            {
-              tool_outputs: toolOutputs,
-            },
-          );
-        } else {
-          console.warn(
-            `[GptService] Nenhum tool output para submeter, continuando...`,
-          );
-        }
+        await this.handleRequiredAction(threadId, runId, run.required_action);
       }
 
       await new Promise((resolve) => setTimeout(resolve, 1000));
@@ -218,6 +117,150 @@ export class GptService {
 
     console.log(`[GptService] Run concluído com status: ${run.status}`);
     return run;
+  }
+
+  private async handleRequiredAction(
+    threadId: string,
+    runId: string,
+    requiredAction: any,
+  ) {
+    const toolCalls = requiredAction.submit_tool_outputs.tool_calls;
+    console.log(
+      `[GptService] Tool calls recebidos:`,
+      JSON.stringify(toolCalls),
+    );
+
+    if (toolCalls.length === 0) {
+      console.warn(`[GptService] Nenhum tool call recebido, continuando...`);
+      return;
+    }
+
+    const toolOutputs: Array<{ tool_call_id: string; output: string }> = [];
+
+    for (const toolCall of toolCalls) {
+      try {
+        const args = JSON.parse(toolCall.function.arguments);
+        const output = await this.executeToolCall(toolCall.function.name, args);
+        toolOutputs.push({
+          tool_call_id: toolCall.id,
+          output: JSON.stringify(output),
+        });
+      } catch (error) {
+        console.error(
+          `[GptService] Erro ao executar função ${toolCall.function.name}:`,
+          error,
+        );
+        toolOutputs.push({
+          tool_call_id: toolCall.id,
+          output: JSON.stringify({ error: 'Erro ao executar função' }),
+        });
+      }
+    }
+
+    if (toolOutputs.length > 0) {
+      console.log(
+        `[GptService] Submetendo tool outputs:`,
+        JSON.stringify(toolOutputs),
+      );
+      await this.openai.beta.threads.runs.submitToolOutputs(threadId, runId, {
+        tool_outputs: toolOutputs,
+      });
+    }
+  }
+
+  private async executeToolCall(functionName: string, args: any): Promise<any> {
+    console.log(`[GptService] Executando função: ${functionName}, args:`, args);
+
+    switch (functionName) {
+      case 'checkClientByPhone':
+        return await this.trinksService.checkClientByPhone(args.phone);
+
+      case 'createClient':
+        return {
+          id: await this.trinksService.createClient(
+            args.name,
+            args.phone,
+            args.gender,
+          ),
+        };
+
+      case 'listServices':
+        return {
+          services: await this.trinksService.listServices(args.searchTerm),
+        };
+
+      case 'listAvailableProfessionals':
+        return {
+          professionals: await this.trinksService.listAvailableProfessionals(),
+        };
+
+      case 'listProfessionalServices':
+        return {
+          services: await this.trinksService.listProfessionalServices(
+            args.professionalId,
+          ),
+        };
+
+      case 'getProfessionalAvailability':
+        return await this.trinksService.getProfessionalAvailability(
+          args.professionalId,
+          args.date,
+        );
+
+      case 'createAppointment':
+        return {
+          appointmentId: await this.trinksService.createAppointment(
+            args.clientId,
+            args.professionalId,
+            args.serviceId,
+            args.durationInMinutes,
+            args.price,
+            args.startDateTime,
+            args.notes,
+          ),
+        };
+
+      default:
+        console.warn(`[GptService] Função desconhecida: ${functionName}`);
+        return { error: 'Unknown function' };
+    }
+  }
+
+  private async getLatestResponse(
+    threadId: string,
+    phone?: string,
+  ): Promise<string> {
+    const messages = await this.openai.beta.threads.messages.list(threadId);
+    const assistantMessages = messages.data
+      .filter((msg) => msg.role === 'assistant')
+      .sort(
+        (a, b) =>
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+      );
+
+    if (assistantMessages.length === 0) {
+      console.log(`[GptService] Nenhuma mensagem do assistente encontrada`);
+      return this.getDefaultGreeting(phone);
+    }
+
+    const responseContent = assistantMessages[0].content[0];
+    if (!responseContent || responseContent.type !== 'text') {
+      console.log(`[GptService] Resposta do assistente não contém texto`);
+      return this.getDefaultGreeting(phone);
+    }
+
+    console.log(
+      `[GptService] Resposta do assistente: ${responseContent.text.value}`,
+    );
+    return responseContent.text.value;
+  }
+
+  private async getDefaultGreeting(phone?: string): Promise<string> {
+    const clientName = phone
+      ? await this.getClientNameFallback(phone)
+      : 'Cliente';
+
+    return `Olá ${clientName}, tudo bem? Me chamo Mari, muito prazer! Seja bem-vinda ao Mega Studio Normandia! 😊 Qual procedimento você está precisando no momento?`;
   }
 
   private async getClientNameFallback(phone: string): Promise<string> {
