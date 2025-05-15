@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { TrinksService } from 'src/trinks/trinks.service';
 import { Agendamento } from './agendamentos.schema';
+import { TrinksService } from '@/trinks/trinks.service';
 
 @Injectable()
 export class AgendamentoService {

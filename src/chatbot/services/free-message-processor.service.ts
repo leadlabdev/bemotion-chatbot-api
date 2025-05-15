@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { SessionService } from './session.service';
-import { GptService } from 'src/openai/openai.service';
-import { TwilioService } from 'src/twilio/twilio.service';
+import { TwilioService } from '@/twilio/twilio.service';
+import { GptService } from '@/openai/openai.service';
 
 @Injectable()
 export class FreeMessageProcessorService {
