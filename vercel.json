@@ -3,7 +3,8 @@
   "builds": [
     {
       "src": "src/lambda.ts",
-      "use": "@vercel/node"
+      "use": "@vercel/node",
+      "config": { "includeFiles": ["dist/**"] }
     }
   ],
   "routes": [
@@ -11,5 +12,6 @@
       "src": "/(.*)",
       "dest": "src/lambda.ts"
     }
-  ]
+  ],
+  "buildCommand": "npm run build && dir dist /s"
 }
