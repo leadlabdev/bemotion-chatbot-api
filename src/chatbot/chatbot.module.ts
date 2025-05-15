@@ -1,18 +1,18 @@
 import { Module } from '@nestjs/common';
-import { TrinksService } from 'src/trinks/trinks.service';
-import { TwilioService } from 'src/twilio/twilio.service';
 import { SessionService } from './services/session.service';
 import { ChatbotController } from './controllers/chatbot.controller';
 import { HttpModule } from '@nestjs/axios';
 import { ConfigModule } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
+import { FreeMessageProcessorService } from './services/free-message-processor.service';
+import { TwilioService } from '@/twilio/twilio.service';
+import { GptService } from '@/openai/openai.service';
+import { TrinksService } from '@/trinks/trinks.service';
+import { TrinksApiService } from '@/trinks/trinks.api.service';
 import {
   Agendamento,
   AgendamentoSchema,
-} from 'src/agendamentos/agendamentos.schema';
-import { FreeMessageProcessorService } from './services/free-message-processor.service';
-import { GptService } from 'src/openai/openai.service';
-import { TrinksApiService } from 'src/trinks/trinks.api.service';
+} from '@/agendamentos/agendamentos.schema';
 
 @Module({
   imports: [

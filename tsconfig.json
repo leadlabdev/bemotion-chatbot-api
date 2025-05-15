@@ -11,16 +11,19 @@
     "target": "ES2021",
     "sourceMap": true,
     "outDir": "./dist",
-    "baseUrl": "./",
+    "rootDir": "./src", // Define explicitamente que só arquivos em `src` serão compilados
+    "baseUrl": "./src", // Muda para `src` para facilitar imports absolutos
     "paths": {
-      "src/*": ["./src/*"]
+      "@/*": ["*"] // Permite imports como `@/trinks/trinks.service` em vez de `src/trinks/trinks.service`
     },
     "incremental": true,
     "skipLibCheck": true,
     "strictNullChecks": true,
     "forceConsistentCasingInFileNames": true,
-    "noImplicitAny": false,
+    "noImplicitAny": true, // Ajuste para maior rigor (opcional)
     "strictBindCallApply": false,
     "noFallthroughCasesInSwitch": false
-  }
+  },
+  "include": ["src/**/*"], // Garante que apenas arquivos em `src` sejam incluídos
+  "exclude": ["node_modules", "dist"] // Exclui explicitamente pastas desnecessárias
 }
