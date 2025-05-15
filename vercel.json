@@ -4,7 +4,9 @@
     {
       "src": "src/lambda.ts",
       "use": "@vercel/node",
-      "config": { "includeFiles": ["dist/**"] }
+      "env": {
+        "NODE_OPTIONS": "--require tsconfig-paths/register"
+      }
     }
   ],
   "routes": [
