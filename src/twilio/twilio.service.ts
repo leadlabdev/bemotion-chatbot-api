@@ -10,7 +10,12 @@ export class TwilioService implements OnModuleInit {
   constructor(private configService: ConfigService) {
     const accountSid = this.getConfigOrThrow('TWILIO_ACCOUNT_SID');
     const authToken = this.getConfigOrThrow('TWILIO_AUTH_TOKEN');
-    this.twilioNumber = this.getConfigOrThrow('TWILIO_WHATSAPP_NUMBER');
+    const nodeEnv = this.configService.get<string>('NODE_ENV') || 'development';
+
+    this.twilioNumber =
+      nodeEnv === 'production'
+        ? this.getConfigOrThrow('TWILIO_WHATSAPP_NUMBER_PROD')
+        : this.getConfigOrThrow('TWILIO_WHATSAPP_NUMBER_DEV');
 
     this.client = new Twilio(accountSid, authToken);
   }
