@@ -179,19 +179,19 @@ export class TrinksApiService {
   /**
    * Lista os serviços disponíveis
    */
-  async listServices(searchTerm?: string): Promise<ServicesResponse> {
+  /**
+   * Lista os serviços disponíveis com nome fixo "IA"
+   */
+  async listServices(
+    searchTerm: string | undefined,
+  ): Promise<ServicesResponse> {
     try {
       const params: Record<string, any> = {
         somenteVisiveisCliente: false,
+        nome: '(IA)',
       };
 
-      if (searchTerm) {
-        params.nome = searchTerm;
-      }
-
-      console.log(
-        `[TrinksApiService] Listando serviços${searchTerm ? ` com filtro: ${searchTerm}` : ''}`,
-      );
+      console.log(`[TrinksApiService] Listando serviços com filtro: IA`);
       const response = await this.apiClient.get<ServicesResponse>('/servicos', {
         params,
       });

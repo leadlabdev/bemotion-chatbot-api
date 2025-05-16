@@ -16,7 +16,6 @@ import { ChatbotModule } from './chatbot/chatbot.module';
         uri: configService.get('MONGODB_URI'),
       }),
     }),
-
     HttpModule,
     ChatbotModule,
   ],

@@ -36,7 +36,9 @@ export class TwilioService implements OnModuleInit {
     const requiredConfigs = [
       'TWILIO_ACCOUNT_SID',
       'TWILIO_AUTH_TOKEN',
-      'TWILIO_WHATSAPP_NUMBER',
+      process.env.NODE_ENV === 'production'
+        ? 'TWILIO_WHATSAPP_NUMBER_PROD'
+        : 'TWILIO_WHATSAPP_NUMBER_DEV',
     ];
 
     for (const config of requiredConfigs) {
