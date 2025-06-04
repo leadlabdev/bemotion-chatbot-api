@@ -1,25 +1,29 @@
-import { Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import { Injectable, Logger } from '@nestjs/common';
 import OpenAI from 'openai';
-import { TrinksService } from '../trinks/trinks.service';
+import { GptConfig } from './openai.config';
+import { ThreadManager } from './openai.thread-manager';
+import { ToolExecutor } from './gpt.tool.executor';
+import { ClientCache } from './client.cache';
+
+export interface ThreadState {
+  serviceSelected?: string;
+  serviceId?: number;
+  professionalId?: number;
+  stage: string;
+}
 
 @Injectable()
 export class GptService {
-  private openai: OpenAI;
-  private assistantId: any;
-  private threadCache: Map<string, string> = new Map();
+  private readonly logger = new Logger(GptService.name);
+  private readonly openai: OpenAI;
 
   constructor(
-    private configService: ConfigService,
-    private trinksService: TrinksService,
+    private readonly gptConfig: GptConfig,
+    private readonly threadManager: ThreadManager,
+    private readonly toolExecutor: ToolExecutor,
+    private readonly clientCache: ClientCache,
   ) {
-    this.openai = new OpenAI({
-      apiKey: this.configService.get<string>('OPENAI_API_KEY'),
-    });
-    this.assistantId = this.configService.get<string>('OPENAI_ASSISTANT_ID');
-    if (!this.assistantId) {
-      throw new Error('OPENAI_ASSISTANT_ID is not defined in environment');
-    }
+    this.openai = new OpenAI({ apiKey: gptConfig.apiKey });
   }
 
   async generateResponse(
@@ -28,65 +32,67 @@ export class GptService {
     session: any,
   ): Promise<string> {
     try {
-      console.log(
-        `[GptService] Iniciando generateResponse: userId=${userId}, message="${message}", session=`,
-        session,
+      this.logger.log(
+        `Iniciando generateResponse: userId=${userId}, message="${message}"`,
       );
 
-      // Validate message
       if (!message || typeof message !== 'string') {
-        console.log(`[GptService] Mensagem inválida ou ausente`);
-        return 'Desculpe, não entendi sua mensagem. 😊 Pode mandar novamente?';
+        this.logger.warn('Mensagem inválida ou ausente');
+        return this.getDefaultGreeting(session?.telefone);
       }
 
-      // Obter ou criar thread para o usuário
-      const threadId = await this.getOrCreateThread(userId);
-
-      const currentDate = new Date().toISOString().split('T')[0]; // Ex.: '2025-05-07'
       const phone = session?.telefone;
-      const enhancedMessage = `[Contexto: Nome do cliente: Cliente, Telefone: ${phone || 'desconhecido'}, Data atual: ${currentDate}]\n${message}`;
-      console.log(
-        `[GptService] Mensagem enviada ao assistente: ${enhancedMessage}`,
-      );
+      const clientName = await this.clientCache.getClientName(phone);
+      const threadData = await this.threadManager.getOrCreateThread(userId);
 
-      await this.openai.beta.threads.messages.create(threadId, {
+      const enhancedMessage = this.buildEnhancedMessage(
+        message,
+        clientName,
+        phone,
+        threadData.state,
+      );
+      this.logger.debug(`Mensagem enviada ao assistente: ${enhancedMessage}`);
+
+      await this.openai.beta.threads.messages.create(threadData.threadId, {
         role: 'user',
         content: enhancedMessage,
       });
 
-      // Executar o assistente
-      const run = await this.openai.beta.threads.runs.create(threadId, {
-        assistant_id: this.assistantId,
-      });
-      console.log(`[GptService] Run criado: runId=${run.id}`);
+      const run = await this.openai.beta.threads.runs.create(
+        threadData.threadId,
+        { assistant_id: this.gptConfig.assistantId },
+      );
+      this.logger.log(`Run criado: runId=${run.id}`);
 
-      // Aguardar a conclusão da execução
-      const completedRun = await this.handleRun(threadId, run.id);
+      const completedRun = await this.handleRun(threadData.threadId, run.id);
 
       if (completedRun.status !== 'completed') {
-        console.log(
-          `[GptService] Run não concluído: status=${completedRun.status}`,
-        );
-        return this.getDefaultGreeting(phone);
+        this.logger.warn(`Run não concluído: status=${completedRun.status}`);
+        return this.getDefaultGreeting(phone, threadData.state);
       }
 
-      // Obter a resposta mais recente
-      return await this.getLatestResponse(threadId, phone);
+      return await this.getLatestResponse(
+        threadData.threadId,
+        phone,
+        threadData.state,
+      );
     } catch (error) {
-      console.error('[GptService] Erro ao gerar resposta:', error);
-      return this.getDefaultGreeting(session?.telefone);
+      this.logger.error('Erro ao gerar resposta', error);
+      return this.getDefaultGreeting(
+        session?.telefone,
+        this.threadManager.getThreadState(userId),
+      );
     }
   }
 
-  private async getOrCreateThread(userId: string): Promise<string> {
-    let threadId = this.threadCache.get(userId);
-    if (!threadId) {
-      const thread = await this.openai.beta.threads.create();
-      threadId = thread.id;
-      this.threadCache.set(userId, threadId);
-      console.log(`[GptService] Nova thread criada: threadId=${threadId}`);
-    }
-    return threadId;
+  private buildEnhancedMessage(
+    message: string,
+    clientName: string,
+    phone: string | undefined,
+    state: ThreadState,
+  ): string {
+    const currentDate = new Date().toISOString().split('T')[0];
+    return `[Contexto: Nome do cliente: ${clientName}, Telefone: ${phone || 'desconhecido'}, Data atual: ${currentDate}, Estado: ${JSON.stringify(state)}]\n${message}`;
   }
 
   private async handleRun(threadId: string, runId: string) {
@@ -96,8 +102,8 @@ export class GptService {
     const maxAttempts = 30;
 
     while (pendingStatuses.includes(run.status) && attempts < maxAttempts) {
-      console.log(
-        `[GptService] Status do run: ${run.status}, tentativa: ${attempts + 1}`,
+      this.logger.debug(
+        `Status do run: ${run.status}, tentativa: ${attempts + 1}`,
       );
 
       if (run.status === 'requires_action' && run.required_action) {
@@ -110,12 +116,12 @@ export class GptService {
     }
 
     if (attempts >= maxAttempts) {
-      console.error(
-        `[GptService] Máximo de tentativas atingido: status=${run.status}`,
-      );
+      this.logger.error(`Máximo de tentativas atingido: status=${run.status}`);
+    } else if (run.status === 'failed') {
+      this.logger.error(`Run falhou: ${JSON.stringify(run.last_error)}`);
     }
 
-    console.log(`[GptService] Run concluído com status: ${run.status}`);
+    this.logger.log(`Run concluído com status: ${run.status}`);
     return run;
   }
 
@@ -125,42 +131,40 @@ export class GptService {
     requiredAction: any,
   ) {
     const toolCalls = requiredAction.submit_tool_outputs.tool_calls;
-    console.log(
-      `[GptService] Tool calls recebidos:`,
-      JSON.stringify(toolCalls),
-    );
+    this.logger.debug(`Tool calls recebidos: ${JSON.stringify(toolCalls)}`);
 
     if (toolCalls.length === 0) {
-      console.warn(`[GptService] Nenhum tool call recebido, continuando...`);
+      this.logger.warn('Nenhum tool call recebido');
       return;
     }
 
-    const toolOutputs: Array<{ tool_call_id: string; output: string }> = [];
-
-    for (const toolCall of toolCalls) {
-      try {
-        const args = JSON.parse(toolCall.function.arguments);
-        const output = await this.executeToolCall(toolCall.function.name, args);
-        toolOutputs.push({
-          tool_call_id: toolCall.id,
-          output: JSON.stringify(output),
-        });
-      } catch (error) {
-        console.error(
-          `[GptService] Erro ao executar função ${toolCall.function.name}:`,
-          error,
-        );
-        toolOutputs.push({
-          tool_call_id: toolCall.id,
-          output: JSON.stringify({ error: 'Erro ao executar função' }),
-        });
-      }
-    }
+    const toolOutputs = await Promise.all(
+      toolCalls.map(async (toolCall: any) => {
+        this.logger.debug(`Processando tool call: ${toolCall.function.name}`);
+        try {
+          const args = JSON.parse(toolCall.function.arguments);
+          const output = await this.toolExecutor.execute(
+            toolCall.function.name,
+            args,
+            threadId,
+          );
+          return { tool_call_id: toolCall.id, output: JSON.stringify(output) };
+        } catch (error) {
+          this.logger.error(
+            `Erro ao executar função ${toolCall.function.name}`,
+            error,
+          );
+          return {
+            tool_call_id: toolCall.id,
+            output: JSON.stringify({ error: 'Erro ao executar função' }),
+          };
+        }
+      }),
+    );
 
     if (toolOutputs.length > 0) {
-      console.log(
-        `[GptService] Submetendo tool outputs:`,
-        JSON.stringify(toolOutputs),
+      this.logger.debug(
+        `Submetendo tool outputs: ${JSON.stringify(toolOutputs)}`,
       );
       await this.openai.beta.threads.runs.submitToolOutputs(threadId, runId, {
         tool_outputs: toolOutputs,
@@ -168,67 +172,10 @@ export class GptService {
     }
   }
 
-  private async executeToolCall(functionName: string, args: any): Promise<any> {
-    console.log(`[GptService] Executando função: ${functionName}, args:`, args);
-
-    switch (functionName) {
-      case 'checkClientByPhone':
-        return await this.trinksService.checkClientByPhone(args.phone);
-
-      case 'createClient':
-        return {
-          id: await this.trinksService.createClient(
-            args.name,
-            args.phone,
-            args.gender,
-          ),
-        };
-
-      case 'listServices':
-        return {
-          services: await this.trinksService.listServices(args.searchTerm),
-        };
-
-      case 'listAvailableProfessionals':
-        return {
-          professionals: await this.trinksService.listAvailableProfessionals(),
-        };
-
-      case 'listProfessionalServices':
-        return {
-          services: await this.trinksService.listProfessionalServices(
-            args.professionalId,
-          ),
-        };
-
-      case 'getProfessionalAvailability':
-        return await this.trinksService.getProfessionalAvailability(
-          args.professionalId,
-          args.date,
-        );
-
-      case 'createAppointment':
-        return {
-          appointmentId: await this.trinksService.createAppointment(
-            args.clientId,
-            args.professionalId,
-            args.serviceId,
-            args.durationInMinutes,
-            args.price,
-            args.startDateTime,
-            args.notes,
-          ),
-        };
-
-      default:
-        console.warn(`[GptService] Função desconhecida: ${functionName}`);
-        return { error: 'Unknown function' };
-    }
-  }
-
   private async getLatestResponse(
     threadId: string,
     phone?: string,
+    state?: ThreadState,
   ): Promise<string> {
     const messages = await this.openai.beta.threads.messages.list(threadId);
     const assistantMessages = messages.data
@@ -239,39 +186,32 @@ export class GptService {
       );
 
     if (assistantMessages.length === 0) {
-      console.log(`[GptService] Nenhuma mensagem do assistente encontrada`);
-      return this.getDefaultGreeting(phone);
+      this.logger.warn('Nenhuma mensagem do assistente encontrada');
+      return this.getDefaultGreeting(phone, state);
     }
 
     const responseContent = assistantMessages[0].content[0];
     if (!responseContent || responseContent.type !== 'text') {
-      console.log(`[GptService] Resposta do assistente não contém texto`);
-      return this.getDefaultGreeting(phone);
+      this.logger.warn('Resposta do assistente não contém texto');
+      return this.getDefaultGreeting(phone, state);
     }
 
-    console.log(
-      `[GptService] Resposta do assistente: ${responseContent.text.value}`,
-    );
+    this.logger.log(`Resposta do assistente: ${responseContent.text.value}`);
     return responseContent.text.value;
   }
 
-  private async getDefaultGreeting(phone?: string): Promise<string> {
+  private async getDefaultGreeting(
+    phone?: string,
+    state?: ThreadState,
+  ): Promise<string> {
     const clientName = phone
-      ? await this.getClientNameFallback(phone)
+      ? await this.clientCache.getClientName(phone)
       : 'Cliente';
 
-    return `Olá ${clientName}, tudo bem? Me chamo Mari, muito prazer! Seja bem-vinda ao Mega Studio Normandia! 😊 Qual procedimento você está precisando no momento?`;
-  }
-
-  private async getClientNameFallback(phone: string): Promise<string> {
-    try {
-      const clientData = await this.trinksService.checkClientByPhone(phone);
-      if (clientData?.data?.length > 0 && clientData.data[0]?.nome) {
-        return clientData.data[0].nome.split(' ')[0];
-      }
-    } catch (error) {
-      console.error('[GptService] Erro no fallback de nome:', error);
+    if (state?.serviceSelected) {
+      return `Olá ${clientName}, parece que estávamos falando sobre ${state.serviceSelected}! 😊 Quer continuar com esse serviço ou prefere outro procedimento?`;
     }
-    return 'Cliente';
+
+    return `Olá ${clientName}, tudo bem? Sou a Bia do Mega Studio Normandia! 😊 Qual procedimento você está precisando hoje?`;
   }
 }

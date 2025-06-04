@@ -16,7 +16,7 @@
     "paths": {
       "@/*": ["*"]
     },
-    "incremental": true,
+    "incremental":false,
     "skipLibCheck": true,
     "strictNullChecks": true,
     "forceConsistentCasingInFileNames": true,

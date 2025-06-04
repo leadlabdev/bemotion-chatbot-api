@@ -179,19 +179,19 @@ export class TrinksApiService {
   /**
    * Lista os serviços disponíveis
    */
-  /**
-   * Lista os serviços disponíveis com nome fixo "IA"
-   */
-  async listServices(
-    searchTerm: string | undefined,
-  ): Promise<ServicesResponse> {
+  async listServices(searchTerm?: string): Promise<ServicesResponse> {
     try {
       const params: Record<string, any> = {
         somenteVisiveisCliente: false,
-        nome: '(IA)',
       };
 
-      console.log(`[TrinksApiService] Listando serviços com filtro: IA`);
+      if (searchTerm) {
+        params.nome = searchTerm;
+      }
+
+      console.log(
+        `[TrinksApiService] Listando serviços${searchTerm ? ` com filtro: ${searchTerm}` : ''}`,
+      );
       const response = await this.apiClient.get<ServicesResponse>('/servicos', {
         params,
       });
@@ -218,9 +218,7 @@ export class TrinksApiService {
       );
 
       // Filtrando apenas pelos profissionais disponíveis
-      const filteredProfessionals = response.data.data.filter((pro) =>
-        this.availableProfessionalIds.includes(pro.id),
-      );
+      const filteredProfessionals = response.data.data;
 
       console.log(
         `[TrinksApiService] ${filteredProfessionals.length} profissionais disponíveis`,
