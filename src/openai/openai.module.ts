@@ -9,6 +9,7 @@ import { ThreadManager } from './openai.thread-manager';
 import { GptService } from './openai.service';
 import { GptConfig } from './openai.config';
 import { ToolExecutor } from './gpt.tool.executor';
+import { SessionService } from '@/chatbot/services/session.service';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { ToolExecutor } from './gpt.tool.executor';
     ToolExecutor,
     ClientCache,
     ServiceCache,
+    SessionService,
     {
       provide: 'OpenAI',
       useFactory: (gptConfig: GptConfig) =>

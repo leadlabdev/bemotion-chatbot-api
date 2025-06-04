@@ -4,12 +4,15 @@ import { GptConfig } from './openai.config';
 import { ThreadManager } from './openai.thread-manager';
 import { ToolExecutor } from './gpt.tool.executor';
 import { ClientCache } from './client.cache';
+import { SessionService } from '@/chatbot/services/session.service';
 
 export interface ThreadState {
   serviceSelected?: string;
   serviceId?: number;
   professionalId?: number;
   stage: string;
+  clientId?: number;
+  clientName?: string;
 }
 
 @Injectable()
@@ -22,6 +25,7 @@ export class GptService {
     private readonly threadManager: ThreadManager,
     private readonly toolExecutor: ToolExecutor,
     private readonly clientCache: ClientCache,
+    private readonly sessionService: SessionService,
   ) {
     this.openai = new OpenAI({ apiKey: gptConfig.apiKey });
   }
@@ -45,43 +49,91 @@ export class GptService {
       const clientName = await this.clientCache.getClientName(phone);
       const threadData = await this.threadManager.getOrCreateThread(userId);
 
-      const enhancedMessage = this.buildEnhancedMessage(
-        message,
-        clientName,
-        phone,
-        threadData.state,
-      );
-      this.logger.debug(`Mensagem enviada ao assistente: ${enhancedMessage}`);
+      // Aguarda conclusão de run ativo, se houver
+      if (session.lastRunId && session.threadId === threadData.threadId) {
+        await this.waitForRunCompletion(threadData.threadId, session.lastRunId);
+      }
 
-      await this.openai.beta.threads.messages.create(threadData.threadId, {
-        role: 'user',
-        content: enhancedMessage,
-      });
+      // Adiciona histórico de mensagens ao thread
+      session.messages = session.messages || [];
+      for (const msg of session.messages) {
+        await this.openai.beta.threads.messages.create(threadData.threadId, {
+          role: msg.role,
+          content: this.buildEnhancedMessage(
+            msg.content,
+            clientName,
+            phone,
+            threadData.state,
+          ),
+        });
+      }
 
+      // Cria um novo run
       const run = await this.openai.beta.threads.runs.create(
         threadData.threadId,
         { assistant_id: this.gptConfig.assistantId },
       );
       this.logger.log(`Run criado: runId=${run.id}`);
 
+      // Salva o runId e threadId na sessão
+      session.lastRunId = run.id;
+      session.threadId = threadData.threadId;
+      await this.sessionService.updateSession(userId, session);
+
       const completedRun = await this.handleRun(threadData.threadId, run.id);
 
       if (completedRun.status !== 'completed') {
         this.logger.warn(`Run não concluído: status=${completedRun.status}`);
+        if (completedRun.last_error) {
+          this.logger.error(
+            `Erro no run: ${JSON.stringify(completedRun.last_error)}`,
+          );
+        }
         return this.getDefaultGreeting(phone, threadData.state);
       }
 
-      return await this.getLatestResponse(
+      const response = await this.getLatestResponse(
         threadData.threadId,
         phone,
         threadData.state,
       );
+
+      // Limpa o lastRunId após conclusão
+      session.lastRunId = null;
+      await this.sessionService.updateSession(userId, session);
+
+      return response;
     } catch (error) {
       this.logger.error('Erro ao gerar resposta', error);
       return this.getDefaultGreeting(
         session?.telefone,
         this.threadManager.getThreadState(userId),
       );
+    }
+  }
+
+  private async waitForRunCompletion(threadId: string, runId: string) {
+    let run = await this.openai.beta.threads.runs.retrieve(threadId, runId);
+    const pendingStatuses = ['queued', 'in_progress', 'requires_action'];
+    let attempts = 0;
+    const maxAttempts = 60; // Aumentar para 60 tentativas (60 segundos)
+
+    while (pendingStatuses.includes(run.status) && attempts < maxAttempts) {
+      this.logger.debug(
+        `Aguardando run: status=${run.status}, tentativa=${attempts + 1}`,
+      );
+      if (run.status === 'requires_action' && run.required_action) {
+        await this.handleRequiredAction(threadId, runId, run.required_action);
+      }
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      run = await this.openai.beta.threads.runs.retrieve(threadId, runId);
+      attempts++;
+    }
+
+    if (attempts >= maxAttempts) {
+      this.logger.error(`Máximo de tentativas atingido: status=${run.status}`);
+    } else if (run.status === 'failed') {
+      this.logger.error(`Run falhou: ${JSON.stringify(run.last_error)}`);
     }
   }
 
@@ -99,7 +151,7 @@ export class GptService {
     let run = await this.openai.beta.threads.runs.retrieve(threadId, runId);
     const pendingStatuses = ['queued', 'in_progress', 'requires_action'];
     let attempts = 0;
-    const maxAttempts = 30;
+    const maxAttempts = 60; // Aumentar para 60 tentativas (60 segundos)
 
     while (pendingStatuses.includes(run.status) && attempts < maxAttempts) {
       this.logger.debug(
@@ -151,12 +203,13 @@ export class GptService {
           return { tool_call_id: toolCall.id, output: JSON.stringify(output) };
         } catch (error) {
           this.logger.error(
-            `Erro ao executar função ${toolCall.function.name}`,
-            error,
+            `Erro ao executar função ${toolCall.function.name}: ${error.message}`,
           );
           return {
             tool_call_id: toolCall.id,
-            output: JSON.stringify({ error: 'Erro ao executar função' }),
+            output: JSON.stringify({
+              error: `Erro ao executar função: ${error.message}`,
+            }),
           };
         }
       }),
