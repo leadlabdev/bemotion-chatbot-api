@@ -73,7 +73,7 @@ export class FreeMessageProcessorService {
           );
           throw new Error('Falha ao processar mensagem');
         }
-      }, 3000), // Aguarda 3 segundos
+      }, 7000), // Aguarda 7 segundos
     );
   }
 }

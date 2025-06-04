@@ -1,9 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import {
-  Client,
-  CreateClientPayload,
-  TrinksApiService,
-} from './trinks.api.service';
+import { TrinksApiService } from './trinks.api.service';
+import { AvailabilityResponse, Client, CreateClientPayload } from './types';
 
 @Injectable()
 export class TrinksService {
@@ -101,7 +98,7 @@ export class TrinksService {
   /**
    * Lista os profissionais disponíveis
    */
-  async listAvailableProfessionals() {
+  async listProfessionals() {
     try {
       console.log(`[TrinksService] Listando profissionais disponíveis`);
       return await this.trinksApiService.listProfessionals();
@@ -114,7 +111,7 @@ export class TrinksService {
   /**
    * Lista os serviços de um profissional
    */
-  async listProfessionalServices(professionalId: number) {
+  async listProfessionalServices(professionalId: number): Promise<any[]> {
     try {
       console.log(
         `[TrinksService] Listando serviços do profissional ID: ${professionalId}`,
@@ -124,43 +121,40 @@ export class TrinksService {
       return result.data;
     } catch (error) {
       console.error(
-        `[TrinksService] Erro ao listar serviços do profissional:`,
+        `[TrinksService] Erro ao listar serviços do profissional ${professionalId}:`,
         error,
       );
-      return [];
+      throw new Error(
+        `Erro ao listar serviços do profissional ${professionalId}: ${error.message}`,
+      );
     }
   }
 
-  /**
-   * Lista os horários disponíveis de um profissional em uma data específica
-   * @param professionalId ID do profissional
-   * @param date Data no formato YYYY-MM-DD
-   */
-  async getProfessionalAvailability(professionalId: number, date: string) {
+  async getProfessionalAvailability(
+    professionalId: number,
+    date: string,
+    servicoId: any,
+    estabelecimentoId: number,
+    servicoDuracao?: number,
+  ): Promise<AvailabilityResponse> {
     try {
       console.log(
-        `[TrinksService] Consultando disponibilidade do profissional ID: ${professionalId} na data: ${date}`,
+        `[TrinksService] Buscando disponibilidade para profissional ${professionalId}, serviço ${servicoId}, data ${date}`,
       );
-      const result = await this.trinksApiService.listProfessionalAvailability(
+      const result = await this.trinksApiService.getProfessionalAvailability(
         professionalId,
         date,
+        servicoId,
+        estabelecimentoId,
+        servicoDuracao,
       );
-
-      if (result.data.length === 0) {
-        console.log(`[TrinksService] Nenhuma disponibilidade encontrada`);
-        return { horariosVagos: [], intervalosVagos: [] };
-      }
-
-      return {
-        horariosVagos: result.data[0].horariosVagos,
-        intervalosVagos: result.data[0].intervalosVagos,
-      };
+      return result;
     } catch (error) {
       console.error(
-        `[TrinksService] Erro ao consultar disponibilidade:`,
+        `[TrinksService] Erro ao buscar disponibilidade do profissional ${professionalId}:`,
         error,
       );
-      return { horariosVagos: [], intervalosVagos: [] };
+      throw error;
     }
   }
 
@@ -199,15 +193,46 @@ export class TrinksService {
       return null;
     }
   }
-  createAppoitment(
-    clienteId: number,
-    servicoId: number,
-    profissionalId: number,
-    dataHoraInicio: string,
-    duracaoEmMinutos: number,
-    valor: number,
-    observacoes: string,
-  ) {
-    throw new Error('Method not implemented.');
+
+  /**
+   * Lista os agendamentos do estabelecimento
+   */
+  async listAppointments(
+    estabelecimentoId: number,
+    status?: string,
+    clientId?: number,
+    professionalId?: number,
+    serviceId?: number,
+    startDate?: string,
+    endDate?: string,
+  ): Promise<any[]> {
+    try {
+      console.log(
+        `[TrinksService] Listando agendamentos do estabelecimento ID: ${estabelecimentoId}`,
+      );
+
+      // Cria objeto com filtros apenas se fornecidos
+      const filters: any = {};
+
+      if (status) filters.status = status;
+      if (clientId) filters.clientId = clientId;
+      if (professionalId) filters.professionalId = professionalId;
+      if (serviceId) filters.serviceId = serviceId;
+      if (startDate) filters.startDate = startDate;
+      if (endDate) filters.endDate = endDate;
+
+      const result = await this.trinksApiService.listAppointments(
+        estabelecimentoId,
+        filters,
+      );
+
+      console.log(
+        `[TrinksService] Encontrados ${result.data.length} agendamentos`,
+      );
+      return result.data;
+    } catch (error) {
+      console.error(`[TrinksService] Erro ao listar agendamentos:`, error);
+      return [];
+    }
   }
 }

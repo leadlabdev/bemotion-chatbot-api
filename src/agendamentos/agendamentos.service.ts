@@ -33,15 +33,6 @@ export class AgendamentoService {
 
     try {
       // Criar o agendamento no Trinks
-      const agendamentoTrinks = await this.trinksService.createAppoitment(
-        clienteId,
-        servicoId,
-        profissionalId,
-        dataHoraInicio,
-        duracaoEmMinutos,
-        valor,
-        observacoes,
-      );
 
       // Salvar no MongoDB
       const novoAgendamento = new this.agendamentoModel({
@@ -56,8 +47,6 @@ export class AgendamentoService {
       });
 
       await novoAgendamento.save();
-
-      return agendamentoTrinks;
     } catch (error) {
       // Logar detalhes relevantes do erro
       console.error('Erro ao criar agendamento:', {

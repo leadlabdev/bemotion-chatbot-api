@@ -7,8 +7,9 @@ import { ClientCache } from './client.cache';
 import { SessionService } from '@/chatbot/services/session.service';
 
 export interface ThreadState {
+  candidateServices: { id: number; nome: string }[];
   serviceSelected?: string;
-  serviceId?: number;
+  serviceId: number;
   professionalId?: number;
   stage: string;
   clientId?: number;
@@ -48,6 +49,25 @@ export class GptService {
       const phone = session?.telefone;
       const clientName = await this.clientCache.getClientName(phone);
       const threadData = await this.threadManager.getOrCreateThread(userId);
+
+      // Check if the message indicates a service selection
+      if (threadData.state?.candidateServices?.length > 0) {
+        const selectedService = threadData.state.candidateServices.find((s) =>
+          message.toLowerCase().includes(s.nome.toLowerCase()),
+        );
+        if (selectedService) {
+          // Update ThreadState
+          this.threadManager.updateThreadState(userId, {
+            serviceId: selectedService.id,
+            serviceSelected: selectedService.nome,
+            candidateServices: [], // Clear candidates
+            stage: 'servico_selecionado',
+          });
+          this.logger.log(
+            `Serviço selecionado pelo cliente: ID=${selectedService.id}, Nome=${selectedService.nome}`,
+          );
+        }
+      }
 
       // Aguarda conclusão de run ativo, se houver
       if (session.lastRunId && session.threadId === threadData.threadId) {
