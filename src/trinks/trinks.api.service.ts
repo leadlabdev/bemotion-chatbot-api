@@ -3,7 +3,6 @@ import { ConfigService } from '@nestjs/config';
 import axios, { AxiosInstance } from 'axios';
 import {
   AppointmentsResponse,
-  AvailabilityResponse,
   ClientResponse,
   CreateAppointmentPayload,
   CreateAppointmentResponse,
@@ -11,9 +10,9 @@ import {
   CreateClientResponse,
   ListAppointmentsFilters,
   Professional,
-  ProfessionalsResponse,
   ServicesResponse,
 } from './types';
+import { mockServices } from './mockServices';
 
 @Injectable()
 export class TrinksApiService {
@@ -86,50 +85,109 @@ export class TrinksApiService {
       throw this.handleApiError(error, 'Erro ao criar cliente');
     }
   }
-
   /**
    * Lista os serviços disponíveis
    */
   async listServices(searchTerm?: string): Promise<ServicesResponse> {
     try {
-      const params: Record<string, any> = {
-        somenteVisiveisCliente: true,
-      };
-
-      if (searchTerm) {
-        params.nome = searchTerm;
-      }
-
       console.log(
         `[TrinksApiService] Listando serviços${searchTerm ? ` com filtro: ${searchTerm}` : ''}`,
       );
-      const response = await this.apiClient.get<ServicesResponse>('/servicos', {
-        params,
-      });
+
+      // Filtrar por termo de busca se fornecido
+      const filteredServices = searchTerm
+        ? mockServices.filter(
+            (service) =>
+              service.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+              service.categoria
+                .toLowerCase()
+                .includes(searchTerm.toLowerCase()),
+          )
+        : mockServices;
+
+      // Simular a estrutura de resposta da API
+      const mockResponse: ServicesResponse = {
+        data: filteredServices,
+        // Adicione outros campos da ServicesResponse se necessário
+        // como total, pagination, etc.
+      };
+
       console.log(
-        `[TrinksApiService] ${response.data.data.length} serviços encontrados`,
+        `[TrinksApiService] ${mockResponse.data.length} serviços encontrados`,
       );
-      return response.data;
+
+      // Simular delay da API (opcional)
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
+      return mockResponse;
     } catch (error) {
       console.error('[TrinksApiService] Erro ao listar serviços:', error);
       throw this.handleApiError(error, 'Erro ao listar serviços');
     }
   }
 
-  /**
-   * Lista todos os profissionais
-   */
   async listProfessionals(): Promise<Professional[]> {
     try {
       console.log(`[TrinksApiService] Listando profissionais`);
-      const response =
-        await this.apiClient.get<ProfessionalsResponse>('/profissionais');
+
+      // Mocked data
+      const mockedProfessionals: Professional[] = [
+        {
+          id: 657506,
+          nome: 'Cristiana do Santos Nobre',
+          cpf: '37355656899',
+          apelido: '01 Cristiana',
+        },
+        {
+          id: 746338,
+          nome: 'EMERSON GOMES DO NASCIMENTO',
+          cpf: '03999766395',
+          apelido: '00 EMERSON',
+        },
+        {
+          id: 209030,
+          nome: 'Jackson Amorim da Silva',
+          cpf: '22810623848',
+          apelido: '00 Jackson',
+        },
+        {
+          id: 505936,
+          nome: 'Jane Alves Siqueira',
+          cpf: '14867811874',
+          apelido: '01 Jane',
+        },
+        {
+          id: 284833,
+          nome: 'Jardel Xavier de Lima',
+          cpf: '32310472859',
+          apelido: '00 Dell',
+        },
+        {
+          id: 635516,
+          nome: 'Luana Menandro Maximiano',
+          cpf: '03295078262',
+          apelido: '00 Luana Menandro',
+        },
+        {
+          id: 618259,
+          nome: 'VALDIR FOGAÇA DE OLIVEIRA',
+          cpf: '27859122847',
+          apelido: '00 Val',
+        },
+        {
+          id: 229782,
+          nome: 'Yuri Ramos Oliveira',
+          cpf: '43538837805',
+          apelido: '00 Yuri Ramos',
+        },
+      ];
+
       console.log(
-        `[TrinksApiService] ${response.data.data.length} profissionais encontrados`,
+        `[TrinksApiService] ${mockedProfessionals.length} profissionais encontrados`,
       );
 
-      // Filtrando apenas pelos profissionais disponíveis
-      const filteredProfessionals = response.data.data;
+      // Filtrando apenas pelos profissionais disponíveis (se necessário)
+      const filteredProfessionals = mockedProfessionals;
 
       console.log(
         `[TrinksApiService] ${filteredProfessionals.length} profissionais disponíveis`,

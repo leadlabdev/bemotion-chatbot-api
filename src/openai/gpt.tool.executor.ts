@@ -63,16 +63,16 @@ export class ToolExecutor {
     state?: ThreadState,
   ) {
     const searchTerm = args.searchTerm?.toLowerCase() || '';
-    const services = await this.trinksService.listServices(searchTerm);
+    const services = await this.trinksService.listServices();
     return { services };
   }
 
   private async handleListProfessionalServices(
-    args: { professionalId: number; serviceId?: number },
+    args: { serviceId: number },
     state?: ThreadState,
   ) {
-    const services = await this.trinksService.listProfessionalServices(
-      args.professionalId,
+    const services = await this.trinksService.listProfessionalsByService(
+      args.serviceId,
     );
     return { services };
   }

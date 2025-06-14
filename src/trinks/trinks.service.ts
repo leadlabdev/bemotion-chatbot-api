@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { TrinksApiService } from './trinks.api.service';
 import { AvailabilityResponse, Client, CreateClientPayload } from './types';
+import { mockedProfessionalsServices } from './mockProfissionalsServices';
 
 @Injectable()
 export class TrinksService {
@@ -82,7 +83,7 @@ export class TrinksService {
   /**
    * Lista os serviços disponíveis
    */
-  async listServices(searchTerm?: string) {
+  async listServices(searchTerm?: string, page?: number, pageSize?: number) {
     try {
       console.log(
         `[TrinksService] Listando serviços${searchTerm ? ` com termo: ${searchTerm}` : ''}`,
@@ -109,25 +110,35 @@ export class TrinksService {
   }
 
   /**
-   * Lista os serviços de um profissional
+   * Lista os profissionais que trabalham com um serviço específico
    */
-  async listProfessionalServices(professionalId: number): Promise<any[]> {
-    try {
-      console.log(
-        `[TrinksService] Listando serviços do profissional ID: ${professionalId}`,
-      );
-      const result =
-        await this.trinksApiService.listProfessionalServices(professionalId);
-      return result.data;
-    } catch (error) {
-      console.error(
-        `[TrinksService] Erro ao listar serviços do profissional ${professionalId}:`,
-        error,
-      );
-      throw new Error(
-        `Erro ao listar serviços do profissional ${professionalId}: ${error.message}`,
-      );
-    }
+  async listProfessionalsByService(serviceId: number): Promise<any> {
+    console.log(
+      `[TrinksApiService] Listando profissionais para o serviço ID: ${serviceId}`,
+    );
+
+    // Retornar mock diretamente
+    return this.getMockProfessionalsByService(serviceId);
+  }
+
+  /**
+   * Retorna mock dos profissionais filtrados por serviço
+   */
+  private getMockProfessionalsByService(serviceId: number): any {
+    // Filtrar profissionais que oferecem o serviço especificado
+    const professionalsWithService = mockedProfessionalsServices.filter(
+      (professional) =>
+        professional.servicos.some((servico) => servico.id === serviceId),
+    );
+
+    console.log(
+      `[TrinksApiService] ${professionalsWithService.length} profissionais encontrados para o serviço ID: ${serviceId}`,
+    );
+
+    return {
+      data: professionalsWithService,
+      // Adicione outros campos da ProfessionalsResponse se necessário
+    };
   }
 
   async getProfessionalAvailability(
