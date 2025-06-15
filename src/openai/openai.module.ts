@@ -10,6 +10,7 @@ import { GptService } from './openai.service';
 import { GptConfig } from './openai.config';
 import { ToolExecutor } from './gpt.tool.executor';
 import { SessionService } from '@/chatbot/services/session.service';
+import { RedisService } from '@/redis/redis.service';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { SessionService } from '@/chatbot/services/session.service';
     ClientCache,
     ServiceCache,
     SessionService,
+    RedisService,
     {
       provide: 'OpenAI',
       useFactory: (gptConfig: GptConfig) =>

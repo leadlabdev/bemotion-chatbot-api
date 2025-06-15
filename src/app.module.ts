@@ -5,6 +5,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { HttpModule } from '@nestjs/axios';
 import { ChatbotModule } from './chatbot/chatbot.module';
+import { RedisService } from './redis/redis.service';
 
 @Module({
   imports: [
@@ -20,7 +21,8 @@ import { ChatbotModule } from './chatbot/chatbot.module';
     ChatbotModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, RedisService],
+  exports: [RedisService],
 })
 export class AppModule {
   constructor() {

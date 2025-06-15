@@ -14,6 +14,7 @@ import {
   AgendamentoSchema,
 } from '@/agendamentos/agendamentos.schema';
 import { GptModule } from '@/openai/openai.module';
+import { RedisService } from '@/redis/redis.service';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { GptModule } from '@/openai/openai.module';
     TwilioService,
     TrinksService,
     TrinksApiService,
+    RedisService,
   ],
   controllers: [ChatbotController],
   exports: [TrinksService], // Exporta TrinksService para o GptModule
