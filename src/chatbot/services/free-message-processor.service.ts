@@ -176,44 +176,4 @@ export class FreeMessageProcessorService {
       );
     }
   }
-
-  getBufferStats(): {
-    totalBuffers: number;
-    totalMessages: number;
-    avgMessagesPerBuffer: number;
-  } {
-    const totalBuffers = this.messageBuffers.size;
-    let totalMessages = 0;
-
-    for (const buffer of this.messageBuffers.values()) {
-      totalMessages += buffer.messages.length;
-    }
-
-    return {
-      totalBuffers,
-      totalMessages,
-      avgMessagesPerBuffer: totalBuffers > 0 ? totalMessages / totalBuffers : 0,
-    };
-  }
-
-  async forceProcessBuffer(telefone: string): Promise<void> {
-    const buffer = this.messageBuffers.get(telefone);
-    if (buffer) {
-      this.logger.log(`Forçando processamento de buffer para ${telefone}`);
-      await this.processBufferedMessages(telefone);
-    }
-  }
-
-  clearBuffer(telefone: string): boolean {
-    const buffer = this.messageBuffers.get(telefone);
-    if (buffer) {
-      if (buffer.timer) {
-        clearTimeout(buffer.timer);
-      }
-      this.messageBuffers.delete(telefone);
-      this.logger.log(`Buffer limpo para ${telefone}`);
-      return true;
-    }
-    return false;
-  }
 }

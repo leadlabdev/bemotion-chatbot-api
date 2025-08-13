@@ -214,20 +214,6 @@ export class RedisService implements OnModuleInit {
     }
   }
 
-  async exists(key: string): Promise<boolean> {
-    try {
-      if (!this.isConnected) {
-        return false;
-      }
-
-      const result = await this.redisService.exists(key);
-      return result === 1;
-    } catch (error) {
-      this.logger.error(`Erro ao verificar existência da chave ${key}:`, error);
-      return false;
-    }
-  }
-
   async ping(): Promise<boolean> {
     try {
       await this.redisService.ping();
@@ -237,18 +223,6 @@ export class RedisService implements OnModuleInit {
       this.logger.error('Erro no ping do Redis:', error);
       this.isConnected = false;
       return false;
-    }
-  }
-
-  async debugKey(key: string): Promise<void> {
-    try {
-      const rawValue = await this.redisService.get(key);
-      this.logger.debug(`Debug chave ${key}:`);
-      this.logger.debug(`- Tipo: ${typeof rawValue}`);
-      this.logger.debug(`- Valor: ${JSON.stringify(rawValue)}`);
-      this.logger.debug(`- Constructor: ${rawValue?.constructor?.name}`);
-    } catch (error) {
-      this.logger.error(`Erro no debug da chave ${key}:`, error);
     }
   }
 }

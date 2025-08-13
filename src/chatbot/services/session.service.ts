@@ -187,22 +187,6 @@ export class SessionService {
     }
   }
 
-  async setRunInfo(
-    telefone: string,
-    runId: string | null,
-    threadId: string | null,
-  ): Promise<void> {
-    try {
-      await this.updateSession(telefone, { lastRunId: runId, threadId });
-    } catch (error) {
-      this.logger.error(
-        `Erro ao definir informações de run para ${telefone}:`,
-        error,
-      );
-      throw error;
-    }
-  }
-
   async clearSession(telefone: string): Promise<void> {
     try {
       const cacheKey = this.getSessionKey(telefone);
@@ -246,24 +230,6 @@ export class SessionService {
         lastActivity: null,
         sessionAge: 0,
       };
-    }
-  }
-
-  async cleanupOldSessions(): Promise<void> {
-    const cutoffTime = new Date(Date.now() - this.SESSION_TTL_SECONDS * 1000);
-    let cleanedCount = 0;
-
-    for (const [telefone, session] of this.sessions.entries()) {
-      if (session.updatedAt < cutoffTime) {
-        await this.clearSession(telefone);
-        cleanedCount++;
-      }
-    }
-
-    if (cleanedCount > 0) {
-      this.logger.log(
-        `Limpeza concluída: ${cleanedCount} sessões antigas removidas`,
-      );
     }
   }
 }
